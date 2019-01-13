@@ -4,6 +4,7 @@ Home Assistant component for Viessmann Vitodata service. This is work in progres
 
 ## Links/Credits:
 * [Original feature request in HA community](https://community.home-assistant.io/t/viessmann-component/77873)
+* [PyViCare](https://github.com/somm15/PyViCare) Python API for accessing the ViCare API used by this project 
 * [Homeassistant Viessmann integration](https://github.com/geertmeersman/homeassistant) An integration using mqtt. The code for the Viessmann cloud communication is taken from that repo
 
 
