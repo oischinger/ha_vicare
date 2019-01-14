@@ -21,7 +21,7 @@ def setup_platform(hass, config, add_devices, discovery_info=None):
                  ViCareSensor(t, "ActiveProgram", ""),
                  ViCareSensor(t, "Modes", ""),
                  ViCareSensor(t, "ActiveMode", ""),
-                 ViCareSensor(t, "CurrentDesiredTemperature", ""),
+                 ViCareSensor(t, "CurrentDesiredTemperature", TEMP_CELSIUS),
                  ViCareSensor(t, "OutsideTemperature", TEMP_CELSIUS),
                  ViCareSensor(t, "RoomTemperature", TEMP_CELSIUS),
                  ViCareSensor(t, "SupplyTemperature", TEMP_CELSIUS),
