@@ -3,10 +3,11 @@ ViCare climate device.
 """
 from homeassistant.components.climate import (
     ClimateDevice, SUPPORT_TARGET_TEMPERATURE, SUPPORT_AWAY_MODE,
-    SUPPORT_OPERATION_MODE,SUPPORT_ON_OFF)
+    SUPPORT_OPERATION_MODE, SUPPORT_ON_OFF, STATE_OFF, STATE_HEAT,
+    STATE_ECO, STATE_IDLE, STATE_AUTO, STATE_UNKNOWN)
 from homeassistant.const import TEMP_CELSIUS, TEMP_FAHRENHEIT, ATTR_TEMPERATURE
 
-REQUIREMENTS = ['PyViCare==0.0.7']
+REQUIREMENTS = ['PyViCare==0.0.21']
 from PyViCare import ViCareSession
 
 SUPPORT_FLAGS = SUPPORT_TARGET_TEMPERATURE | SUPPORT_AWAY_MODE | SUPPORT_OPERATION_MODE | SUPPORT_ON_OFF
@@ -17,11 +18,11 @@ CONF_PASSWORD = 'password'
 def setup_platform(hass, config, add_entities, discovery_info=None):
     t = ViCareSession(config.get(CONF_USER), config.get(CONF_PASSWORD), "/tmp/vicare_token.save")
     add_entities([
-        DemoClimate('vicare', t)
+        ViCareClimate('vicare', t)
     ])
 
 
-class DemoClimate(ClimateDevice):
+class ViCareClimate(ClimateDevice):
     """Representation of a demo climate device."""
 
     def __init__(self, name, api):
@@ -33,7 +34,7 @@ class DemoClimate(ClimateDevice):
         self._on = None
         self._away = None
         self._target_temperature = None
-        self._operation_list = None
+        self._operation_list = [STATE_OFF, STATE_HEAT, STATE_ECO, STATE_IDLE, STATE_AUTO]
         self._current_operation = None
         self._current_temperature = None
 
@@ -44,7 +45,6 @@ class DemoClimate(ClimateDevice):
         else:
             self._current_temperature = self._api.getBoilerTemperature()
         self._current_operation = self._api.getActiveProgram()
-        self._operation_list = self._api.getPrograms()
         self._target_temperature = self._api.getCurrentDesiredTemperature()
         self._away = self._api.getActiveProgram() == "holiday"
         _active_mode = self._api.getActiveMode()
@@ -78,7 +78,42 @@ class DemoClimate(ClimateDevice):
     @property
     def current_operation(self):
         """Return current operation ie. heat, cool, idle."""
-        return self._current_operation
+        if self._current_operation.lower() == 'comfort':
+            return STATE_HEAT
+        elif self._current_operation.lower() == 'sparmodus':
+            return STATE_ECO
+        elif self._current_operation.lower() == 'eco':
+            return STATE_ECO
+        elif self._current_operation.lower() == 'normal':
+            return STATE_AUTO
+        elif self._current_operation.lower() == 'reduced':
+            return STATE_AUTO
+        elif self._current_operation.lower() == 'standby':
+            return STATE_OFF
+        else:
+            return STATE_UNKNOWN
+
+    def set_operation_mode(self, operation_mode):
+        if operation_mode in self._operation_list:
+            """ 1st deactivate current mode """
+            self._api.deactivateProgram(self._current_operation)
+            """ 2nd: set new mode """
+            if operation_mode == STATE_HEAT:
+                self._api.activateProgram("comfort")
+            elif operation_mode == STATE_ECO:
+                self._api.activateProgram("eco")
+            elif operation_mode == STATE_AUTO:
+                self._api.activateProgram("normal")
+            elif operation_mode == STATE_OFF:
+                self._api.activateProgram("standby")
+            else:
+                _LOGGER.error(
+                    "An error occurred while setting operation mode. "
+                    "Invalid operation mode: %s", operation_mode)
+        else:
+            _LOGGER.error(
+                "An error occurred while setting operation mode. "
+                "Invalid operation mode: %s", operation_mode)
 
     @property
     def operation_list(self):
@@ -101,12 +136,6 @@ class DemoClimate(ClimateDevice):
             self._target_temperature = kwargs.get(ATTR_TEMPERATURE)
         self._api.setProgramTemperature(self._current_operation, self._target_temperature)
         self.schedule_update_ha_state()
-
-    def set_operation_mode(self, operation_mode):
-        """Set new target temperature."""
-        self._current_operation = operation_mode
-        self.schedule_update_ha_state()
-        self._api.activateProgram(operation_mode)
 
     def turn_away_mode_on(self):
         """Turn away mode on."""

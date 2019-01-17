@@ -4,7 +4,7 @@ import sys
 from homeassistant.const import TEMP_CELSIUS
 from homeassistant.helpers.entity import Entity
 
-REQUIREMENTS = ['PyViCare==0.0.7']
+REQUIREMENTS = ['PyViCare==0.0.21']
 _LOGGER = logging.getLogger(__name__)
 DEPENDENCIES = []
 
@@ -30,6 +30,22 @@ def setup_platform(hass, config, add_devices, discovery_info=None):
                  ViCareSensor(t, "HeatingCurveShift", ""),
                  ViCareSensor(t, "MonthSinceLastService", ""),
                  ViCareSensor(t, "LastServiceDate", ""),
+                 ViCareSensor(t, "GasConsumptionHeatingDays", ""),
+                 ViCareSensor(t, "GasConsumptionHeatingToday", 'kWh'),
+                 ViCareSensor(t, "GasConsumptionHeatingWeeks", ""),
+                 ViCareSensor(t, "GasConsumptionHeatingThisWeek", 'kWh'),
+                 ViCareSensor(t, "GasConsumptionHeatingMonths", ""),
+                 ViCareSensor(t, "GasConsumptionHeatingThisMonth", 'kWh'),
+                 ViCareSensor(t, "GasConsumptionHeatingYears", ""),
+                 ViCareSensor(t, "GasConsumptionHeatingThisYear", 'kWh'),
+                 ViCareSensor(t, "GasConsumptionDomesticHotWaterDays", ""),
+                 ViCareSensor(t, "GasConsumptionDomesticHotWaterToday", 'kWh'),
+                 ViCareSensor(t, "GasConsumptionDomesticHotWaterWeeks", ""),
+                 ViCareSensor(t, "GasConsumptionDomesticHotWaterThisWeek", 'kWh'),
+                 ViCareSensor(t, "GasConsumptionDomesticHotWaterMonths", ""),
+                 ViCareSensor(t, "GasConsumptionDomesticHotWaterThisMonth", 'kWh'),
+                 ViCareSensor(t, "GasConsumptionDomesticHotWaterYears", ""),
+                 ViCareSensor(t, "GasConsumptionDomesticHotWaterThisYear", 'kWh'),
                  ViCareSensor(t, "DomesticHotWaterConfiguredTemperature", TEMP_CELSIUS)])
     return True
 
