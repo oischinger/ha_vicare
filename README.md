@@ -26,6 +26,7 @@ climate:
 Restart home assistant
 
 ### Example lovelace config:
+![Lovelace Example](/doc/lovelace_example.jpg)
 ```
 type: entities
 entities:
