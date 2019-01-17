@@ -5,8 +5,6 @@ Home Assistant component for Viessmann Vitodata service. This is work in progres
 ## Links/Credits:
 * [Original feature request in HA community](https://community.home-assistant.io/t/viessmann-component/77873)
 * [PyViCare](https://github.com/somm15/PyViCare) Python API for accessing the ViCare API used by this project 
-* [Homeassistant Viessmann integration](https://github.com/geertmeersman/homeassistant) An integration using mqtt. The code for the Viessmann cloud communication is taken from that repo
-
 
 ## How to set it up:
 
@@ -18,8 +16,44 @@ sensor:
   - platform: vicare
     user: [VICARE_EMAIL]
     password: [VICARE_PASSWORD]
-    client_id: '79742319e39245de5f91d15ff4cac2a8'
-    client_secret: '8ad97aceb92c5892e102b093c7c083fa'
+    
+climate:
+  - platform: vicare
+    user: [VICARE_EMAIL]
+    password: [VICARE_PASSWORD]
 ```
 
 Restart home assistant
+
+### Example lovelace config:
+```
+type: entities
+entities:
+  - entity: climate.vicare
+
+type: thermostat
+entity: climate.vicare
+
+type: history-graph
+entities:
+  - entity: sensor.vicare_gasconsumptionheatingthisyear
+    name: Verbrauch Heizen
+  - entity: sensor.vicare_gasconsumptiondomestichotwaterthisyear
+    name: Verbrauch Wasser
+  - entity: sensor.vicare_activeprogram
+    name: Programm
+  - entity: sensor.vicare_activemode
+    name: Modus
+  - entity: sensor.vicare_boilertemperature
+    name: Kesseltemperatur
+  - entity: sensor.vicare_currentdesiredtemperature
+    name: Solltemp. Heizen
+  - entity: sensor.vicare_domestichotwaterconfiguredtemperature
+    name: Solltemp. Wasser
+  - entity: sensor.vicare_domestichotwaterstoragetemperature
+    name: Wassertemperatur
+  - entity: sensor.vicare_outsidetemperature
+    name: Aussenfühler
+
+
+```
