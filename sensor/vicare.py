@@ -3,24 +3,17 @@ import logging
 import sys
 from homeassistant.const import TEMP_CELSIUS
 from homeassistant.helpers.entity import Entity
-import homeassistant.helpers.config_validation as cv
-from homeassistant.components.sensor import PLATFORM_SCHEMA
 
 REQUIREMENTS = ['PyViCare==0.0.21']
 _LOGGER = logging.getLogger(__name__)
 
-PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
-    vol.Optional(CONF_CIRCUIT, default=0): cv.positive_int
-})
-
 CONF_USER = 'user'
 CONF_PASSWORD = 'password'
-CONF_CIRCUIT = 'circuit'
 
 def setup_platform(hass, config, add_devices, discovery_info=None):
     """Setup the ViCare component."""
     from PyViCare import ViCareSession
-    t = ViCareSession(config.get(CONF_USER), config.get(CONF_PASSWORD), "/tmp/vicare_token.save",conf.get(CONF_CIRCUIT))
+    t = ViCareSession(config.get(CONF_USER), config.get(CONF_PASSWORD), "/tmp/vicare_token.save")
     add_devices([ViCareSensor(t, "BoilerTemperature", TEMP_CELSIUS),
                  ViCareSensor(t, "Programs", ""),
                  ViCareSensor(t, "ActiveProgram", ""),
