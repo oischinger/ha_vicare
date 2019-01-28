@@ -8,7 +8,6 @@ from homeassistant.components.climate import (
 from homeassistant.const import TEMP_CELSIUS, TEMP_FAHRENHEIT, ATTR_TEMPERATURE
 
 REQUIREMENTS = ['PyViCare==0.0.21']
-from PyViCare import ViCareSession
 
 SUPPORT_FLAGS = SUPPORT_TARGET_TEMPERATURE | SUPPORT_AWAY_MODE | SUPPORT_OPERATION_MODE | SUPPORT_ON_OFF
 
@@ -16,6 +15,7 @@ CONF_USER = 'user'
 CONF_PASSWORD = 'password'
 
 def setup_platform(hass, config, add_entities, discovery_info=None):
+    from PyViCare import ViCareSession
     t = ViCareSession(config.get(CONF_USER), config.get(CONF_PASSWORD), "/tmp/vicare_token.save")
     add_entities([
         ViCareClimate('vicare', t)

@@ -6,15 +6,13 @@ from homeassistant.helpers.entity import Entity
 
 REQUIREMENTS = ['PyViCare==0.0.21']
 _LOGGER = logging.getLogger(__name__)
-DEPENDENCIES = []
 
 CONF_USER = 'user'
 CONF_PASSWORD = 'password'
 
-from PyViCare import ViCareSession
-
 def setup_platform(hass, config, add_devices, discovery_info=None):
     """Setup the ViCare component."""
+    from PyViCare import ViCareSession
     t = ViCareSession(config.get(CONF_USER), config.get(CONF_PASSWORD), "/tmp/vicare_token.save")
     add_devices([ViCareSensor(t, "BoilerTemperature", TEMP_CELSIUS),
                  ViCareSensor(t, "Programs", ""),
@@ -46,7 +44,8 @@ def setup_platform(hass, config, add_devices, discovery_info=None):
                  ViCareSensor(t, "GasConsumptionDomesticHotWaterThisMonth", 'kWh'),
                  ViCareSensor(t, "GasConsumptionDomesticHotWaterYears", ""),
                  ViCareSensor(t, "GasConsumptionDomesticHotWaterThisYear", 'kWh'),
-                 ViCareSensor(t, "DomesticHotWaterConfiguredTemperature", TEMP_CELSIUS)])
+                 ViCareSensor(t, "DomesticHotWaterConfiguredTemperature", TEMP_CELSIUS),
+                 ViCareSensor(t, "CurrentPower", 'kW')])
     return True
 
 class ViCareSensor(Entity):
