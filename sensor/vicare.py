@@ -75,6 +75,7 @@ class ViCareSensor(Entity):
         return self._unit
 
     def update(self):
+        from PyViCare import ViCareSession
         api_method = getattr(ViCareSession, "get" + self.sensorName)
         self._state = api_method(self._api)
 

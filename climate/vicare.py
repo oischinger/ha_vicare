@@ -4,7 +4,7 @@ ViCare climate device.
 from homeassistant.components.climate import (
     ClimateDevice, SUPPORT_TARGET_TEMPERATURE, SUPPORT_AWAY_MODE,
     SUPPORT_OPERATION_MODE, SUPPORT_ON_OFF, STATE_OFF, STATE_HEAT,
-    STATE_ECO, STATE_IDLE, STATE_AUTO, STATE_UNKNOWN)
+    STATE_ECO, STATE_AUTO, STATE_UNKNOWN)
 from homeassistant.const import TEMP_CELSIUS, TEMP_FAHRENHEIT, ATTR_TEMPERATURE
 
 REQUIREMENTS = ['PyViCare==0.0.21']
@@ -34,8 +34,8 @@ class ViCareClimate(ClimateDevice):
         self._on = None
         self._away = None
         self._target_temperature = None
-        self._operation_list = [STATE_OFF, STATE_HEAT, STATE_ECO, STATE_IDLE, STATE_AUTO]
-        self._current_operation = None
+        self._operation_list = [STATE_OFF, STATE_HEAT, STATE_ECO, STATE_AUTO]
+        self._current_operation = "unknown"
         self._current_temperature = None
 
     def update(self):
