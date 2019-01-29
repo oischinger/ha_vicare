@@ -2,7 +2,7 @@
 import logging
 import sys
 import voluptuous as vol
-from homeassistant.const import TEMP_CELSIUS
+from homeassistant.const import (TEMP_CELSIUS, CONF_USERNAME, CONF_PASSWORD)
 from homeassistant.helpers.entity import Entity
 import homeassistant.helpers.config_validation as cv
 from homeassistant.components.sensor import PLATFORM_SCHEMA
@@ -10,8 +10,6 @@ from homeassistant.components.sensor import PLATFORM_SCHEMA
 REQUIREMENTS = ['PyViCare==0.0.21']
 _LOGGER = logging.getLogger(__name__)
 
-CONF_USER = 'user'
-CONF_PASSWORD = 'password'
 CONF_CIRCUIT = 'circuit'
 
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
@@ -21,7 +19,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
 def setup_platform(hass, config, add_devices, discovery_info=None):
     """Setup the ViCare component."""
     from PyViCare import ViCareSession
-    t = ViCareSession(config.get(CONF_USER), config.get(CONF_PASSWORD), "/tmp/vicare_token.save",conf.get(CONF_CIRCUIT))
+    t = ViCareSession(config.get(CONF_USERNAME), config.get(CONF_PASSWORD), "/tmp/vicare_token.save",conf.get(CONF_CIRCUIT))
     add_devices([ViCareSensor(t, "BoilerTemperature", TEMP_CELSIUS),
                  ViCareSensor(t, "Programs", ""),
                  ViCareSensor(t, "ActiveProgram", ""),
