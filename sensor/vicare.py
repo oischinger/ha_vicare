@@ -13,6 +13,8 @@ _LOGGER = logging.getLogger(__name__)
 CONF_CIRCUIT = 'circuit'
 
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
+    vol.Required(CONF_USERNAME): cv.string,
+	vol.Required(CONF_PASSWORD): cv.string,
     vol.Optional(CONF_CIRCUIT, default=0): cv.positive_int
 })
 
