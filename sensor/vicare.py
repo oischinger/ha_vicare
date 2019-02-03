@@ -10,6 +10,7 @@ _LOGGER = logging.getLogger(__name__)
 CONF_USER = 'user'
 CONF_PASSWORD = 'password'
 
+
 def setup_platform(hass, config, add_devices, discovery_info=None):
     """Setup the ViCare component."""
     from PyViCare import ViCareSession
@@ -48,16 +49,17 @@ def setup_platform(hass, config, add_devices, discovery_info=None):
                  ViCareSensor(t, "CurrentPower", 'kW')])
     return True
 
+
 class ViCareSensor(Entity):
     """Representation of a Sensor."""
 
-    def __init__(self, api, sensorName, unit):
+    def __init__(self, api, sensor_name, unit):
         """Initialize the sensor."""
         self._state = None
         self._api = api
         self._unit = unit
         self._device_state_attributes = {}
-        self.sensorName = sensorName
+        self.sensorName = sensor_name
 
     @property
     def name(self):
@@ -78,4 +80,3 @@ class ViCareSensor(Entity):
         from PyViCare import ViCareSession
         api_method = getattr(ViCareSession, "get" + self.sensorName)
         self._state = api_method(self._api)
-
