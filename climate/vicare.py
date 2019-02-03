@@ -14,6 +14,7 @@ SUPPORT_FLAGS = SUPPORT_TARGET_TEMPERATURE | SUPPORT_AWAY_MODE | SUPPORT_OPERATI
 CONF_USER = 'user'
 CONF_PASSWORD = 'password'
 
+
 def setup_platform(hass, config, add_entities, discovery_info=None):
     from PyViCare import ViCareSession
     t = ViCareSession(config.get(CONF_USER), config.get(CONF_PASSWORD), "/tmp/vicare_token.save")
@@ -40,7 +41,7 @@ class ViCareClimate(ClimateDevice):
 
     def update(self):
         _room_temperature = self._api.getRoomTemperature() 
-        if _room_temperature != None and _room_temperature != "error":
+        if _room_temperature is not None and _room_temperature != "error":
             self._current_temperature = _room_temperature
         else:
             self._current_temperature = self._api.getBoilerTemperature()
@@ -160,4 +161,3 @@ class ViCareClimate(ClimateDevice):
         self._on = False
         self.schedule_update_ha_state()
         self._api.setMode("standby")
-
