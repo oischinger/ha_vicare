@@ -11,6 +11,7 @@ from homeassistant.const import (TEMP_CELSIUS, TEMP_FAHRENHEIT, ATTR_TEMPERATURE
 from homeassistant.helpers.entity import Entity
 import homeassistant.helpers.config_validation as cv
 from homeassistant.components.sensor import PLATFORM_SCHEMA
+import voluptuous as vol
 
 _LOGGER = logging.getLogger(__name__)
 
