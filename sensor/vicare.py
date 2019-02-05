@@ -87,4 +87,4 @@ class ViCareSensor(Entity):
         from PyViCare import ViCareSession
         api_method = getattr(ViCareSession, "get" + self.sensor_name, None)
         if api_method is not None:
-        self._state = api_method(self._api)
+            self._state = api_method(self._api)
