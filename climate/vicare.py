@@ -1,18 +1,24 @@
 """
 ViCare climate device.
 """
+
+import logging
+
 from homeassistant.components.climate import (
     ClimateDevice, SUPPORT_TARGET_TEMPERATURE, SUPPORT_AWAY_MODE,
-    SUPPORT_OPERATION_MODE, SUPPORT_ON_OFF, STATE_OFF, STATE_HEAT,
-    STATE_ECO, STATE_IDLE, STATE_AUTO, STATE_UNKNOWN)
+    SUPPORT_HOLD_MODE, SUPPORT_OPERATION_MODE, SUPPORT_ON_OFF, STATE_OFF,
+    STATE_HEAT, STATE_ECO, STATE_AUTO, STATE_UNKNOWN)
 from homeassistant.const import TEMP_CELSIUS, TEMP_FAHRENHEIT, ATTR_TEMPERATURE
+
+_LOGGER = logging.getLogger(__name__)
 
 REQUIREMENTS = ['PyViCare==0.0.21']
 
-SUPPORT_FLAGS = SUPPORT_TARGET_TEMPERATURE | SUPPORT_AWAY_MODE | SUPPORT_OPERATION_MODE | SUPPORT_ON_OFF
+SUPPORT_FLAGS = SUPPORT_TARGET_TEMPERATURE | SUPPORT_AWAY_MODE | SUPPORT_HOLD_MODE | SUPPORT_OPERATION_MODE | SUPPORT_ON_OFF
 
 CONF_USER = 'user'
 CONF_PASSWORD = 'password'
+
 
 def setup_platform(hass, config, add_entities, discovery_info=None):
     from PyViCare import ViCareSession
@@ -33,14 +39,16 @@ class ViCareClimate(ClimateDevice):
         self._unit_of_measurement = TEMP_CELSIUS
         self._on = None
         self._away = None
+        self._hold = None
+        self._pre_hold = None
         self._target_temperature = None
-        self._operation_list = [STATE_OFF, STATE_HEAT, STATE_ECO, STATE_IDLE, STATE_AUTO]
-        self._current_operation = None
+        self._operation_list = [STATE_OFF, STATE_HEAT, STATE_ECO, STATE_AUTO]
+        self._current_operation = "unknown"
         self._current_temperature = None
 
     def update(self):
         _room_temperature = self._api.getRoomTemperature() 
-        if _room_temperature != None and _room_temperature != "error":
+        if _room_temperature is not None and _room_temperature != "error":
             self._current_temperature = _room_temperature
         else:
             self._current_temperature = self._api.getBoilerTemperature()
@@ -49,6 +57,13 @@ class ViCareClimate(ClimateDevice):
         self._away = self._api.getActiveProgram() == "holiday"
         _active_mode = self._api.getActiveMode()
         self._on = _active_mode == "dhwAndHeating" or _active_mode == "forcedReduced" or _active_mode == "forcedNormal"
+        if _active_mode == "forcedReduced":
+            self._hold = "away"
+        elif _active_mode == "forcedNormal":
+            self._hold = "home"
+        else:
+            self._pre_hold = _active_mode
+            self._hold = "off"
 
     @property
     def supported_features(self):
@@ -126,6 +141,11 @@ class ViCareClimate(ClimateDevice):
         return self._away
 
     @property
+    def current_hold_mode(self):
+        """Return hold mode setting."""
+        return self._hold
+
+    @property
     def is_on(self):
         """Return true if the device is on."""
         return self._on
@@ -149,6 +169,34 @@ class ViCareClimate(ClimateDevice):
         self.schedule_update_ha_state()
         self._api.setMode("normal")
 
+    def set_hold_mode(self, hold_mode):
+        if hold_mode in ["away", "home"]:
+            active_mode = self._api.getActiveMode()
+            self.schedule_update_ha_state()
+            if hold_mode == "away":
+                success = self._api.setMode("forcedReduced")
+            else:
+                hold_mode == "home"
+                success = self._api.setMode("forcedNormal")
+            # PyViCare currently returns 'None' on no error, checking for both for future changes
+            if success["error"] is None or success["error"] == 'None':
+                self._hold = hold_mode
+                if active_mode in ["standby", "dhw", "dhwAndHeating", "active"]:
+                    self._pre_hold = active_mode
+            else:
+                _LOGGER.error("Failed to set hold mode on ViCare API to %s with status code %s and error %s", hold_mode, success["statusCode"], success["errror"])
+        elif hold_mode == "off":
+            if self._pre_hold is not None:
+                success = self._api.setMode(self._pre_hold)
+            else:
+                _LOGGER.info("No stored pre hold mode found - switching to hot water and heating")
+                success = self._api.setMode("dhwAndHeating")
+            # PyViCare currently returns 'None' on no error, checking for both for future changes
+            if not (success["error"] is None or success["error"] == 'None'):
+                _LOGGER.error("Failed to restore from hold mode on ViCare API to %s with status code %s and error %s", self._pre_hold, success["statusCode"], success["errror"])
+        else:
+            _LOGGER.error("Unknown hold mode %s set - ignoring", hold_mode)
+
     def turn_on(self):
         """Turn on."""
         self._on = True
@@ -160,4 +208,3 @@ class ViCareClimate(ClimateDevice):
         self._on = False
         self.schedule_update_ha_state()
         self._api.setMode("standby")
-

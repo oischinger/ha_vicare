@@ -18,6 +18,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
     vol.Optional(CONF_CIRCUIT, default=0): cv.positive_int
 })
 
+
 def setup_platform(hass, config, add_devices, discovery_info=None):
     """Setup the ViCare component."""
     from PyViCare import ViCareSession
@@ -56,16 +57,17 @@ def setup_platform(hass, config, add_devices, discovery_info=None):
                  ViCareSensor(t, "CurrentPower", 'kW')])
     return True
 
+
 class ViCareSensor(Entity):
     """Representation of a Sensor."""
 
-    def __init__(self, api, sensorName, unit):
+    def __init__(self, api, sensor_name, unit):
         """Initialize the sensor."""
         self._state = None
         self._api = api
         self._unit = unit
         self._device_state_attributes = {}
-        self.sensorName = sensorName
+        self.sensorName = sensor_name
 
     @property
     def name(self):
@@ -83,6 +85,7 @@ class ViCareSensor(Entity):
         return self._unit
 
     def update(self):
-        api_method = getattr(ViCareSession, "get" + self.sensorName)
+        from PyViCare import ViCareSession
+        api_method = getattr(ViCareSession, "get" + self.sensor_name, None)
+        if api_method is not None:
         self._state = api_method(self._api)
-
