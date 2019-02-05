@@ -3,26 +3,31 @@ ViCare climate device.
 """
 
 import logging
-
 from homeassistant.components.climate import (
     ClimateDevice, SUPPORT_TARGET_TEMPERATURE, SUPPORT_AWAY_MODE,
     SUPPORT_HOLD_MODE, SUPPORT_OPERATION_MODE, SUPPORT_ON_OFF, STATE_OFF,
     STATE_HEAT, STATE_ECO, STATE_AUTO, STATE_UNKNOWN)
-from homeassistant.const import TEMP_CELSIUS, TEMP_FAHRENHEIT, ATTR_TEMPERATURE
+from homeassistant.const import (TEMP_CELSIUS, TEMP_FAHRENHEIT, ATTR_TEMPERATURE, CONF_USERNAME, CONF_PASSWORD)
+from homeassistant.helpers.entity import Entity
+import homeassistant.helpers.config_validation as cv
+from homeassistant.components.sensor import PLATFORM_SCHEMA
 
 _LOGGER = logging.getLogger(__name__)
 
-REQUIREMENTS = ['PyViCare==0.0.21']
+REQUIREMENTS = ['PyViCare==0.0.22']
 
 SUPPORT_FLAGS = SUPPORT_TARGET_TEMPERATURE | SUPPORT_AWAY_MODE | SUPPORT_HOLD_MODE | SUPPORT_OPERATION_MODE | SUPPORT_ON_OFF
+CONF_CIRCUIT = 'circuit'
 
-CONF_USER = 'user'
-CONF_PASSWORD = 'password'
-
+PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
+    vol.Required(CONF_USERNAME): cv.string,
+    vol.Required(CONF_PASSWORD): cv.string,
+    vol.Optional(CONF_CIRCUIT, default=0): cv.positive_int
+})
 
 def setup_platform(hass, config, add_entities, discovery_info=None):
     from PyViCare import ViCareSession
-    t = ViCareSession(config.get(CONF_USER), config.get(CONF_PASSWORD), "/tmp/vicare_token.save")
+    t = ViCareSession(config.get(CONF_USERNAME), config.get(CONF_PASSWORD), "/tmp/vicare_token.save", config.get(CONF_CIRCUIT))
     add_entities([
         ViCareClimate('vicare', t)
     ])
