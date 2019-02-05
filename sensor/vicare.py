@@ -7,7 +7,7 @@ from homeassistant.helpers.entity import Entity
 import homeassistant.helpers.config_validation as cv
 from homeassistant.components.sensor import PLATFORM_SCHEMA
 
-REQUIREMENTS = ['PyViCare==0.0.21']
+REQUIREMENTS = ['PyViCare==0.0.22']
 _LOGGER = logging.getLogger(__name__)
 
 CONF_CIRCUIT = 'circuit'
@@ -22,7 +22,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
 def setup_platform(hass, config, add_devices, discovery_info=None):
     """Setup the ViCare component."""
     from PyViCare import ViCareSession
-    t = ViCareSession(config.get(CONF_USERNAME), config.get(CONF_PASSWORD), "/tmp/vicare_token.save",config.get(CONF_CIRCUIT))
+    t = ViCareSession(config.get(CONF_USERNAME), config.get(CONF_PASSWORD), "/tmp/vicare_token.save", config.get(CONF_CIRCUIT))
     add_devices([ViCareSensor(t, "BoilerTemperature", TEMP_CELSIUS),
                  ViCareSensor(t, "Programs", ""),
                  ViCareSensor(t, "ActiveProgram", ""),
