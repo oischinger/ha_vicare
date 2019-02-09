@@ -83,7 +83,6 @@ class ViCareClimate(ClimateDevice):
         self._support_flags = SUPPORT_FLAGS_HEATING
         self._unit_of_measurement = hass.config.units.temperature_unit
         self._on = None
-        self._away = None
         self._hold = None
         self._pre_hold = None
         self._target_temperature = None
@@ -101,7 +100,6 @@ class ViCareClimate(ClimateDevice):
         self._current_program = self._api.getActiveProgram()
         self._target_temperature = self._api.getCurrentDesiredTemperature()
         self._current_mode = self._api.getActiveMode()
-        self._away = self._current_program == VICARE_PROGRAM_HOLIDAY or self._current_mode == VICARE_MODE_FORCEDREDUCED
         self._on = (self._current_mode == VICARE_MODE_DHWANDHEATING or self._current_mode == VICARE_MODE_FORCEDREDUCED or self._current_mode == VICARE_MODE_FORCEDNORMAL)
         if self._current_mode == VICARE_MODE_FORCEDREDUCED:
             self._hold = VICARE_HOLD_MODE_AWAY
@@ -184,7 +182,7 @@ class ViCareClimate(ClimateDevice):
     @property
     def is_away_mode_on(self):
         """Return if away mode is on."""
-        return self._away
+        return self._hold == VICARE_HOLD_MODE_AWAY
 
     @property
     def current_hold_mode(self):
@@ -220,18 +218,16 @@ class ViCareClimate(ClimateDevice):
 
     def turn_away_mode_on(self):
         """Turn away mode on."""
-        self._away = True
+        self.set_hold_mode(VICARE_HOLD_MODE_AWAY)
         self.schedule_update_ha_state()
-        self._api.setMode("holiday")
 
     def turn_away_mode_off(self):
         """Turn away mode off."""
-        self._away = False
+        self.set_hold_mode(VICARE_HOLD_MODE_OFF)
         self.schedule_update_ha_state()
-        self._api.setMode("normal")
 
     def set_hold_mode(self, hold_mode):
-        if hold_mode in ["away", "home"]:
+        if hold_mode in [VICARE_HOLD_MODE_AWAY, VICARE_HOLD_MODE_HOME]:
             active_mode = self._api.getActiveMode()
             self.schedule_update_ha_state()
             if hold_mode == VICARE_HOLD_MODE_AWAY:
@@ -246,7 +242,7 @@ class ViCareClimate(ClimateDevice):
                     self._pre_hold = active_mode
             else:
                 _LOGGER.error("Failed to set hold mode on ViCare API to %s with status code %s and error %s", hold_mode, success["statusCode"], success["errror"])
-        elif hold_mode == "off":
+        elif hold_mode == VICARE_HOLD_MODE_OFF:
             if self._pre_hold is not None:
                 success = self._api.setMode(self._pre_hold)
             else:
