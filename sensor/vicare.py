@@ -7,7 +7,7 @@ from homeassistant.helpers.entity import Entity
 import homeassistant.helpers.config_validation as cv
 from homeassistant.components.sensor import PLATFORM_SCHEMA
 
-REQUIREMENTS = ['PyViCare==0.0.22']
+REQUIREMENTS = ['PyViCare==0.0.3']
 _LOGGER = logging.getLogger(__name__)
 
 CONF_CIRCUIT = 'circuit'
