@@ -1,20 +1,30 @@
 # The domain of your component. Equal to the filename of your component.
 import logging
 import sys
-from homeassistant.const import TEMP_CELSIUS
+import voluptuous as vol
+from homeassistant.const import (TEMP_CELSIUS, CONF_USERNAME, CONF_PASSWORD)
 from homeassistant.helpers.entity import Entity
+import homeassistant.helpers.config_validation as cv
+from homeassistant.components.sensor import PLATFORM_SCHEMA
 
-REQUIREMENTS = ['PyViCare==0.0.21']
+REQUIREMENTS = ['PyViCare==0.0.30']
 _LOGGER = logging.getLogger(__name__)
 
-CONF_USER = 'user'
-CONF_PASSWORD = 'password'
+CONF_CIRCUIT = 'circuit'
 
+PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
+    vol.Required(CONF_USERNAME): cv.string,
+    vol.Required(CONF_PASSWORD): cv.string,
+    vol.Optional(CONF_CIRCUIT, default=-1): int
+})
 
 def setup_platform(hass, config, add_devices, discovery_info=None):
     """Setup the ViCare component."""
     from PyViCare import ViCareSession
-    t = ViCareSession(config.get(CONF_USER), config.get(CONF_PASSWORD), "/tmp/vicare_token.save")
+    if config.get(CONF_CIRCUIT) == -1:
+        t = ViCareSession(config.get(CONF_USERNAME), config.get(CONF_PASSWORD), "/tmp/vicare_token.save")
+    else:        
+        t = ViCareSession(config.get(CONF_USERNAME), config.get(CONF_PASSWORD), "/tmp/vicare_token.save", config.get(CONF_CIRCUIT))
     add_devices([ViCareSensor(t, "BoilerTemperature", TEMP_CELSIUS),
                  ViCareSensor(t, "Programs", ""),
                  ViCareSensor(t, "ActiveProgram", ""),
