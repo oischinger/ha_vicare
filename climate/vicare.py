@@ -7,7 +7,7 @@ import logging
 from homeassistant.components.climate import (
     ClimateDevice, SUPPORT_TARGET_TEMPERATURE, SUPPORT_AWAY_MODE,
     SUPPORT_HOLD_MODE, SUPPORT_OPERATION_MODE, SUPPORT_ON_OFF, STATE_OFF,
-    STATE_HEAT, STATE_ECO, STATE_AUTO, STATE_UNKNOWN)
+    STATE_HEAT, STATE_ECO, STATE_AUTO)
 from homeassistant.const import TEMP_CELSIUS, TEMP_FAHRENHEIT, ATTR_TEMPERATURE
 
 _LOGGER = logging.getLogger(__name__)
@@ -106,7 +106,7 @@ class ViCareClimate(ClimateDevice):
         elif self._current_operation.lower() == 'standby':
             return STATE_OFF
         else:
-            return STATE_UNKNOWN
+            return "unknown"
 
     def set_operation_mode(self, operation_mode):
         if operation_mode in self._operation_list:
