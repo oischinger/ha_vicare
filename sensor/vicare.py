@@ -91,3 +91,5 @@ class ViCareSensor(Entity):
         api_method = getattr(ViCareSession, "get" + self.sensorName, None)
         if api_method is not None:
             self._state = api_method(self._api)
+        else:
+            self._state = "unknown"
