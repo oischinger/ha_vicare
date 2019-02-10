@@ -172,7 +172,7 @@ class ViCareClimate(ClimateDevice):
                 "An error occurred while setting operation mode. "
                 "Invalid operation mode: %s", operation_mode)
 
-        self.aync_schedule_update_ha_state(True)
+        self.async_schedule_update_ha_state(True)
 
     @property
     def operation_list(self):
@@ -241,7 +241,7 @@ class ViCareClimate(ClimateDevice):
                 if active_mode in [VICARE_MODE_OFF, VICARE_MODE_DHW, VICARE_MODE_DHWANDHEATING, "active"]:
                     self._pre_hold = active_mode
             else:
-                _LOGGER.error("Failed to set hold mode on ViCare API to %s with status code %s and error %s", hold_mode, success["statusCode"], success["errror"])
+                _LOGGER.error("Failed to set hold mode on ViCare API to %s with status code %s and error %s", hold_mode, success["statusCode"], success["error"])
         elif hold_mode == VICARE_HOLD_MODE_OFF:
             if self._pre_hold is not None:
                 success = self._api.setMode(self._pre_hold)
@@ -250,7 +250,7 @@ class ViCareClimate(ClimateDevice):
                 success = self._api.setMode(VICARE_MODE_DHWANDHEATING)
             # PyViCare currently returns 'None' on no error, checking for both for future changes
             if not (success["error"] is None or success["error"] == 'None'):
-                _LOGGER.error("Failed to restore from hold mode on ViCare API to %s with status code %s and error %s", self._pre_hold, success["statusCode"], success["errror"])
+                _LOGGER.error("Failed to restore from hold mode on ViCare API to %s with status code %s and error %s", self._pre_hold, success["statusCode"], success["error"])
         else:
             _LOGGER.error("Unknown hold mode %s set - ignoring", hold_mode)
 
