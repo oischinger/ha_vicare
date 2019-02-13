@@ -14,12 +14,12 @@ Add the following sensor to your Home assistant configuration.yaml
 ```
 sensor:
   - platform: vicare
-    user: [VICARE_EMAIL]
+    username: [VICARE_EMAIL]
     password: [VICARE_PASSWORD]
     
 climate:
   - platform: vicare
-    user: [VICARE_EMAIL]
+    username: [VICARE_EMAIL]
     password: [VICARE_PASSWORD]
 ```
 
