@@ -30,10 +30,14 @@ Restart home assistant
 ```
 type: entities
 entities:
-  - entity: climate.vicare
+  - entity: climate.vicare_heating
+  - entity: climate.vicare_water
+  
+type: thermostat
+entity: climate.vicare_heating
 
 type: thermostat
-entity: climate.vicare
+entity: climate.vicare_water
 
 type: history-graph
 entities:
