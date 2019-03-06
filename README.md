@@ -8,9 +8,10 @@ Home Assistant component for Viessmann Vitodata service. This is work in progres
 
 ## How to set it up:
 
-Put the sensor in your .homeassistant/custom_components directory, e.g. .homeassistant/custom_components/sensor/vicare.py
+Copy the sensor component to .homeassistant/custom_components/vicare/sensor.py
+Copy the climate component to .homeassistant/custom_components/vicare/climate.py
 
-Add the following sensor to your Home assistant configuration.yaml
+Add the following config to your Home assistant configuration.yaml
 ```
 sensor:
   - platform: vicare
@@ -62,3 +63,6 @@ entities:
 
 
 ```
+
+## Consumption data
+Note that the consumption sensors (sensor.vicare_consumption*) are only reporting data for Vitodens 200 with Vitotronic 200 (Typ HO1B/HO2B) as well as Vitodens 300-W (HO2B), Vitodens 333-F (HO2B) and Vitodens 343-F (HO2B).
