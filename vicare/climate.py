@@ -4,12 +4,12 @@ ViCare climate device.
 
 import logging
 
-from homeassistant.components.climate import (
-    ClimateDevice, SUPPORT_TARGET_TEMPERATURE, SUPPORT_AWAY_MODE,
-    SUPPORT_HOLD_MODE, SUPPORT_OPERATION_MODE, SUPPORT_ON_OFF, STATE_OFF,
-    STATE_HEAT, STATE_ECO, STATE_AUTO)
+from homeassistant.components.climate import (ClimateDevice)
+from homeassistant.components.climate.const import (
+    SUPPORT_AWAY_MODE, SUPPORT_HOLD_MODE, SUPPORT_OPERATION_MODE, SUPPORT_ON_OFF,
+    SUPPORT_TARGET_TEMPERATURE, STATE_HEAT, STATE_ECO, STATE_AUTO)
 from homeassistant.const import (
-    TEMP_CELSIUS, TEMP_FAHRENHEIT, ATTR_TEMPERATURE,
+    STATE_OFF, TEMP_CELSIUS, TEMP_FAHRENHEIT, ATTR_TEMPERATURE,
     CONF_USERNAME, CONF_PASSWORD, CONF_NAME, PRECISION_WHOLE)
 from homeassistant.helpers.entity import Entity
 import homeassistant.helpers.config_validation as cv
