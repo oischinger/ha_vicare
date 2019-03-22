@@ -153,7 +153,9 @@ class ViCareClimate(ClimateDevice):
     def set_operation_mode(self, operation_mode):
         if operation_mode in self._operation_list:
             """ 1st deactivate current mode """
-            self._api.deactivateProgram(self._current_mode)
+            if self._current_program != STATE_AUTO:
+                self._api.deactivateProgram(self._current_program)
+
             """ 2nd: set new mode """
             if operation_mode == STATE_HEAT:
                 self._api.activateProgram(VICARE_PROGRAM_COMFORT)
