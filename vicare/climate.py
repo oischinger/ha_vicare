@@ -213,7 +213,7 @@ class ViCareClimate(ClimateDevice):
         """Set new target temperatures."""
         if kwargs.get(ATTR_TEMPERATURE) is not None:
             self._target_temperature = kwargs.get(ATTR_TEMPERATURE)
-        self._api.setProgramTemperature(self.current_operation(), self._target_temperature)
+        self._api.setProgramTemperature(self._current_program, self._target_temperature)
         self.schedule_update_ha_state()
 
     def turn_away_mode_on(self):
