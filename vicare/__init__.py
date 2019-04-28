@@ -1,0 +1,2 @@
+"""The ViCare integration."""
+
