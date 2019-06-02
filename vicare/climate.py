@@ -52,6 +52,8 @@ SUPPORT_FLAGS_WATER = SUPPORT_TARGET_TEMPERATURE | SUPPORT_OPERATION_MODE | SUPP
 
 VALUE_UNKNOWN = 'unknown'
 
+PYVICARE_ERROR = 'error'
+
 
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
     vol.Required(CONF_USERNAME): cv.string,
@@ -98,7 +100,14 @@ class ViCareClimate(ClimateDevice):
         else:
             self._current_temperature = self._api.getBoilerTemperature()
         self._current_program = self._api.getActiveProgram()
-        self._target_temperature = self._api.getCurrentDesiredTemperature()
+		
+        #The getCurrentDesiredTemperature call can yield 'error' (str) when the system is in standby
+        desiredTemperature = self._api.getCurrentDesiredTemperature()
+        if desiredTemperature == PYVICARE_ERROR:
+            desiredTemperature = None
+
+        self._target_temperature = desiredTemperature
+		
         self._current_mode = self._api.getActiveMode()
         self._on = (self._current_mode == VICARE_MODE_DHWANDHEATING or self._current_mode == VICARE_MODE_FORCEDREDUCED or self._current_mode == VICARE_MODE_FORCEDNORMAL)
         if self._current_mode == VICARE_MODE_FORCEDREDUCED:
