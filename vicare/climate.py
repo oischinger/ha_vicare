@@ -6,7 +6,7 @@ import logging
 
 from homeassistant.components.climate import (ClimateDevice)
 from homeassistant.components.climate.const import (
-    SUPPORT_PRESET_MODE, SUPPORT_TARGET_TEMPERATURE, PRESET_AWAY, PRESET_ECO, PRESET_COMFORT,
+    SUPPORT_PRESET_MODE, SUPPORT_TARGET_TEMPERATURE, PRESET_ECO, PRESET_COMFORT,
     HVAC_MODE_OFF, HVAC_MODE_HEAT, HVAC_MODE_AUTO)
 from homeassistant.const import (
     TEMP_CELSIUS, TEMP_FAHRENHEIT, ATTR_TEMPERATURE,
@@ -141,20 +141,18 @@ class ViCareClimate(ClimateDevice):
             return HVAC_MODE_OFF
         if self._current_mode == VICARE_MODE_DHWANDHEATING or self._current_mode == VICARE_MODE_DHW:
             return HVAC_MODE_AUTO
+        if self._current_mode == VICARE_MODE_FORCEDREDUCED or self._current_mode == VICARE_MODE_FORCEDNORMAL:
+            return HVAC_MODE_HEAT
         return HVAC_MODE_OFF
 
     def set_hvac_mode(self, hvac_mode):
         if hvac_mode in self._hvac_modes:
-            """ 1st deactivate any existing program """
-            self._api.deactivateProgram(self._current_program)
-
-            """ 2nd: set new mode """
             if hvac_mode == HVAC_MODE_HEAT:
-                self._api.activateProgram(VICARE_PROGRAM_NORMAL)
+                self._api.setMode(VICARE_MODE_FORCEDNORMAL)
             elif hvac_mode == HVAC_MODE_AUTO:
-                self._api.activateProgram(VICARE_PROGRAM_ACTIVE)
+                self._api.setMode(VICARE_MODE_DHWANDHEATING)
             elif hvac_mode == HVAC_MODE_OFF:
-                self._api.activateProgram(VICARE_PROGRAM_STANDBY)
+                self._api.setMode(VICARE_MODE_OFF)
             else:
                 _LOGGER.error(
                     "An error occurred while setting operation mode. "
@@ -198,15 +196,13 @@ class ViCareClimate(ClimateDevice):
         """Return the current preset mode, e.g., home, away, temp."""
         if self._current_program == VICARE_PROGRAM_COMFORT:
             return PRESET_COMFORT
-        elif self._current_program == VICARE_PROGRAM_HOLIDAY:
-            return PRESET_AWAY
         elif self._current_program == VICARE_PROGRAM_ECO:
             return PRESET_ECO
         return None
 
     @property
     def preset_modes(self):
-        return [PRESET_COMFORT, PRESET_AWAY, PRESET_ECO]
+        return [PRESET_COMFORT, PRESET_ECO]
 
     def set_preset_mode(self, preset_mode):
         """ 1st deactivate any existing program"""
@@ -217,8 +213,6 @@ class ViCareClimate(ClimateDevice):
             self._api.activateProgram(VICARE_PROGRAM_COMFORT)
         elif preset_mode == PRESET_ECO:
             self._api.activateProgram(VICARE_PROGRAM_ECO)
-        elif preset_mode == PRESET_AWAY:
-            self._api.activateProgram(VICARE_PROGRAM_HOLIDAY)
 
 
 class ViCareWater(ClimateDevice):
