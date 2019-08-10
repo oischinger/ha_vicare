@@ -50,6 +50,33 @@ VICARE_TEMP_HEATING_MAX = 37
 SUPPORT_FLAGS_HEATING = SUPPORT_TARGET_TEMPERATURE | SUPPORT_PRESET_MODE 
 SUPPORT_FLAGS_WATER = SUPPORT_TARGET_TEMPERATURE 
 
+VICARE_TO_HA_HVAC_HEATING = {
+    VICARE_MODE_DHW: HVAC_MODE_OFF,
+    VICARE_MODE_DHWANDHEATING: HVAC_MODE_AUTO,
+    VICARE_MODE_FORCEDREDUCED: HVAC_MODE_OFF,
+    VICARE_MODE_FORCEDNORMAL: HVAC_MODE_HEAT,
+    VICARE_MODE_OFF: HVAC_MODE_OFF
+}
+
+HA_TO_VICARE_HVAC_HEATING = {
+    HVAC_MODE_HEAT: VICARE_MODE_FORCEDNORMAL,
+    HVAC_MODE_OFF: VICARE_MODE_DHW,
+    HVAC_MODE_AUTO: VICARE_MODE_DHWANDHEATING
+}
+
+VICARE_TO_HA_HVAC_DHW = {
+    VICARE_MODE_DHW: HVAC_MODE_AUTO,
+    VICARE_MODE_DHWANDHEATING: HVAC_MODE_AUTO,
+    VICARE_MODE_FORCEDREDUCED: HVAC_MODE_AUTO,
+    VICARE_MODE_FORCEDNORMAL: HVAC_MODE_AUTO,
+    VICARE_MODE_OFF: HVAC_MODE_OFF
+}
+
+HA_TO_VICARE_HVAC_DHW = {
+    HVAC_MODE_OFF: VICARE_MODE_OFF,
+    HVAC_MODE_AUTO: VICARE_MODE_DHW
+}
+
 VALUE_UNKNOWN = 'unknown'
 
 PYVICARE_ERROR = 'error'
@@ -77,7 +104,7 @@ def setup_platform(
 
 
 class ViCareClimate(ClimateDevice):
-    """Representation of a demo climate device."""
+    """Representation of the ViCare climate device."""
 
     def __init__(self, hass, name, api):
         """Initialize the climate device."""
@@ -87,7 +114,6 @@ class ViCareClimate(ClimateDevice):
         self._support_flags = SUPPORT_FLAGS_HEATING
         self._unit_of_measurement = hass.config.units.temperature_unit
         self._target_temperature = None
-        self._hvac_modes = [HVAC_MODE_OFF, HVAC_MODE_HEAT, HVAC_MODE_AUTO]
         self._current_mode = VALUE_UNKNOWN
         self._current_temperature = None
         self._current_program = VALUE_UNKNOWN
@@ -137,37 +163,17 @@ class ViCareClimate(ClimateDevice):
     @property
     def hvac_mode(self):
         """Return current hvac mode"""
-        if self._current_program == VICARE_PROGRAM_STANDBY:
-            return HVAC_MODE_OFF
-        if self._current_mode == VICARE_MODE_DHWANDHEATING or self._current_mode == VICARE_MODE_DHW:
-            return HVAC_MODE_AUTO
-        if self._current_mode == VICARE_MODE_FORCEDREDUCED or self._current_mode == VICARE_MODE_FORCEDNORMAL:
-            return HVAC_MODE_HEAT
-        return HVAC_MODE_OFF
+        return VICARE_TO_HA_HVAC_HEATING[self._current_mode]
 
     def set_hvac_mode(self, hvac_mode):
-        if hvac_mode in self._hvac_modes:
-            if hvac_mode == HVAC_MODE_HEAT:
-                self._api.setMode(VICARE_MODE_FORCEDNORMAL)
-            elif hvac_mode == HVAC_MODE_AUTO:
-                self._api.setMode(VICARE_MODE_DHWANDHEATING)
-            elif hvac_mode == HVAC_MODE_OFF:
-                self._api.setMode(VICARE_MODE_OFF)
-            else:
-                _LOGGER.error(
-                    "An error occurred while setting operation mode. "
-                    "Invalid operation mode: %s", operation_mode)
-        else:
-            _LOGGER.error(
-                "An error occurred while setting operation mode. "
-                "Invalid operation mode: %s", operation_mode)
-
+        _LOGGER.error("setting hvac mode to %s (%s)", hvac_mode, HA_TO_VICARE_HVAC_HEATING[hvac_mode])
+        self._api.setMode(HA_TO_VICARE_HVAC_HEATING[hvac_mode])
         self.async_schedule_update_ha_state(True)
 
     @property
     def hvac_modes(self):
         """Return the list of available hvac modes."""
-        return self._hvac_modes
+        return list(HA_TO_VICARE_HVAC_HEATING.keys())
 
     @property
     def min_temp(self):
@@ -218,7 +224,7 @@ class ViCareClimate(ClimateDevice):
 class ViCareWater(ClimateDevice):
 
     def __init__(self, hass, name, api):
-        """Initialize the climate device."""
+        """Initialize the DHW climate device."""
         self._name = name
         self._state = None
         self._api = api
@@ -226,7 +232,6 @@ class ViCareWater(ClimateDevice):
         self._unit_of_measurement = hass.config.units.temperature_unit
         self._target_temperature = None
         self._current_temperature = None
-        self._hvac_modes = [HVAC_MODE_OFF, HVAC_MODE_AUTO]
         self._current_mode = VALUE_UNKNOWN
 
     def update(self):
@@ -294,37 +299,17 @@ class ViCareWater(ClimateDevice):
     @property
     def hvac_mode(self):
         """Return current hvac mode"""
-        if self._current_mode == VICARE_MODE_OFF:
-            return HVAC_MODE_OFF
-        if self._current_mode == VICARE_MODE_DHWANDHEATING or self._current_mode == VICARE_MODE_DHW:
-            return HVAC_MODE_AUTO
-        return HVAC_MODE_OFF
+        return HA_TO_VICARE_HVAC_DHW
 
     def set_hvac_mode(self, hvac_mode):
-        if hvac_mode in self._hvac_modes:
-            """ 1st deactivate any existing program """
-            self._api.deactivateProgram(self._current_program)
-
-            """ 2nd: set new mode """
-            if hvac_mode == HVAC_MODE_AUTO:
-                self._api.activateProgram(VICARE_PROGRAM_ACTIVE)
-            elif hvac_mode == HVAC_MODE_OFF:
-                self._api.activateProgram(VICARE_PROGRAM_STANDBY)
-            else:
-                _LOGGER.error(
-                    "An error occurred while setting operation mode. "
-                    "Invalid operation mode: %s", operation_mode)
-        else:
-            _LOGGER.error(
-                "An error occurred while setting operation mode. "
-                "Invalid operation mode: %s", operation_mode)
-
-        self.async_schedule_update_ha_state(True)
+        _LOGGER.error(
+            "The DHW climate device does not support setting modes."
+            "The current mode is only informative since. Setting it might conflict with the heating climate device")
 
     @property
     def hvac_modes(self):
         """Return the list of available hvac modes."""
-        return self._hvac_modes
+        return list(HA_TO_VICARE_HVAC_DHW.keys())
 
     @property
     def preset_modes(self):
