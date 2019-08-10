@@ -299,7 +299,7 @@ class ViCareWater(ClimateDevice):
     @property
     def hvac_mode(self):
         """Return current hvac mode"""
-        return HA_TO_VICARE_HVAC_DHW
+        return VICARE_TO_HA_HVAC_DHW[self._current_mode]
 
     def set_hvac_mode(self, hvac_mode):
         _LOGGER.error(
