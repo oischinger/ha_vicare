@@ -1,6 +1,6 @@
 {
   "domain": "vicare",
-  "name": "Viessmann ViCar",
+  "name": "Viessmann ViCare",
   "documentation": "https://www.home-assistant.io/components/vicare",
   "dependencies": ["mqtt"],
   "codeowners": ["@oischinger"],
