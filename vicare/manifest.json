@@ -2,8 +2,8 @@
   "domain": "vicare",
   "name": "Viessmann ViCare",
   "documentation": "https://www.home-assistant.io/components/vicare",
-  "dependencies": ["mqtt"],
+  "dependencies": [],
   "codeowners": ["@oischinger"],
-  "requirements": ["PyViCare==0.0.30"]
+  "requirements": ["PyViCare==0.1.1"]
 }
 
