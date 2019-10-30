@@ -76,43 +76,50 @@ class ViCareWater(WaterHeaterDevice):
 
     def update(self):
         """Let HA know there has been an update from the ViCare API."""
-        current_temperature = self._api.getDomesticHotWaterStorageTemperature()
-        if current_temperature is not None and current_temperature != "error":
-            self._current_temperature = current_temperature
-        else:
-            self._current_temperature = None
+        try:
+            current_temperature = self._api.getDomesticHotWaterStorageTemperature()
+            if current_temperature is not None and current_temperature != "error":
+                self._current_temperature = current_temperature
+            else:
+                self._current_temperature = None
 
-        self._target_temperature = self._api.getDomesticHotWaterConfiguredTemperature()
+            self._target_temperature = self._api.getDomesticHotWaterConfiguredTemperature()
 
-        self._current_mode = self._api.getActiveMode()
+            self._current_mode = self._api.getActiveMode()
 
-        # Update the generic device attributes
-        self._attributes = {}
-        if self._heating_type == HeatingType.gas:
-            self._attributes[
-                "gas_consumption_dhw_days"
-            ] = self._api.getGasConsumptionDomesticHotWaterDays()
-            self._attributes[
-                "gas_consumption_dhw_today"
-            ] = self._api.getGasConsumptionDomesticHotWaterToday()
-            self._attributes[
-                "gas_consumption_dhw_weeks"
-            ] = self._api.getGasConsumptionDomesticHotWaterWeeks()
-            self._attributes[
-                "gas_consumption_dhw_this_week"
-            ] = self._api.getGasConsumptionDomesticHotWaterThisWeek()
-            self._attributes[
-                "gas_consumption_dhw_months"
-            ] = self._api.getGasConsumptionDomesticHotWaterMonths()
-            self._attributes[
-                "gas_consumption_dhw_this_month"
-            ] = self._api.getGasConsumptionDomesticHotWaterThisMonth()
-            self._attributes[
-                "gas_consumption_dhw_years"
-            ] = self._api.getGasConsumptionDomesticHotWaterYears()
-            self._attributes[
-                "gas_consumption_dhw_this_year"
-            ] = self._api.getGasConsumptionDomesticHotWaterThisYear()
+            # Update the generic device attributes
+            self._attributes = {}
+            if self._heating_type == HeatingType.gas:
+                self._attributes[
+                    "gas_consumption_dhw_days"
+                ] = self._api.getGasConsumptionDomesticHotWaterDays()
+                self._attributes[
+                    "gas_consumption_dhw_today"
+                ] = self._api.getGasConsumptionDomesticHotWaterToday()
+                self._attributes[
+                    "gas_consumption_dhw_weeks"
+                ] = self._api.getGasConsumptionDomesticHotWaterWeeks()
+                self._attributes[
+                    "gas_consumption_dhw_this_week"
+                ] = self._api.getGasConsumptionDomesticHotWaterThisWeek()
+                self._attributes[
+                    "gas_consumption_dhw_months"
+                ] = self._api.getGasConsumptionDomesticHotWaterMonths()
+                self._attributes[
+                    "gas_consumption_dhw_this_month"
+                ] = self._api.getGasConsumptionDomesticHotWaterThisMonth()
+                self._attributes[
+                    "gas_consumption_dhw_years"
+                ] = self._api.getGasConsumptionDomesticHotWaterYears()
+                self._attributes[
+                    "gas_consumption_dhw_this_year"
+                ] = self._api.getGasConsumptionDomesticHotWaterThisYear()
+        except requests.exceptions.ConnectionError:
+            _LOGGER.error("Unable to retrieve data from %s", _RESOURCE)
+            return
+        except simplejson.errors.JSONDecodeError:
+            _LOGGER.error("Unable to retrieve data from %s", _RESOURCE)
+            return
 
     @property
     def supported_features(self):
