@@ -1,5 +1,7 @@
 """Viessmann ViCare water_heater device."""
 import logging
+import requests
+import simplejson
 
 from homeassistant.components.water_heater import (
     SUPPORT_TARGET_TEMPERATURE,
@@ -42,6 +44,8 @@ HA_TO_VICARE_HVAC_DHW = {
     OPERATION_MODE_ON: VICARE_MODE_DHW,
 }
 
+PYVICARE_ERROR = "error"
+
 
 def setup_platform(hass, config, add_entities, discovery_info=None):
     """Create the ViCare water_heater devices."""
@@ -78,12 +82,21 @@ class ViCareWater(WaterHeaterDevice):
         """Let HA know there has been an update from the ViCare API."""
         try:
             current_temperature = self._api.getDomesticHotWaterStorageTemperature()
-            if current_temperature is not None and current_temperature != "error":
+            if (
+                current_temperature is not None
+                and current_temperature != PYVICARE_ERROR
+            ):
                 self._current_temperature = current_temperature
             else:
                 self._current_temperature = None
 
-            self._target_temperature = self._api.getDomesticHotWaterConfiguredTemperature()
+            target_temperature = self._api.getDomesticHotWaterConfiguredTemperature()
+            if target_temperature is not None and target_temperature != PYVICARE_ERROR:
+                self._target_temperature = (
+                    self._api.getDomesticHotWaterConfiguredTemperature()
+                )
+            else:
+                self._target_temperature = None
 
             self._current_mode = self._api.getActiveMode()
 
@@ -115,10 +128,10 @@ class ViCareWater(WaterHeaterDevice):
                     "gas_consumption_dhw_this_year"
                 ] = self._api.getGasConsumptionDomesticHotWaterThisYear()
         except requests.exceptions.ConnectionError:
-            _LOGGER.error("Unable to retrieve data from %s", _RESOURCE)
+            _LOGGER.error("Unable to retrieve data from ViCare server")
             return
         except simplejson.errors.JSONDecodeError:
-            _LOGGER.error("Unable to retrieve data from %s", _RESOURCE)
+            _LOGGER.error("Unable to decode data from ViCare server")
             return
 
     @property

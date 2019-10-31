@@ -1,5 +1,7 @@
 """Viessmann ViCare climate device."""
 import logging
+import requests
+import simplejson
 
 from homeassistant.components.climate import ClimateDevice
 from homeassistant.components.climate.const import (
@@ -109,84 +111,88 @@ class ViCareClimate(ClimateDevice):
     def update(self):
         """Let HA know there has been an update from the ViCare API."""
         try:
-	        _room_temperature = self._api.getRoomTemperature()
-	        _supply_temperature = self._api.getSupplyTemperature()
-	        if _room_temperature is not None and _room_temperature != PYVICARE_ERROR:
-	            self._current_temperature = _room_temperature
-	        elif _supply_temperature != PYVICARE_ERROR:
-	            self._current_temperature = _supply_temperature
-	        else:
-	            self._current_temperature = None
-	        self._current_program = self._api.getActiveProgram()
-	
-	        # The getCurrentDesiredTemperature call can yield 'error' (str) when the system is in standby
-	        desired_temperature = self._api.getCurrentDesiredTemperature()
-	        if desired_temperature == PYVICARE_ERROR:
-	            desired_temperature = None
-	
-	        self._target_temperature = desired_temperature
-	
-	        self._current_mode = self._api.getActiveMode()
+            _room_temperature = self._api.getRoomTemperature()
+            _supply_temperature = self._api.getSupplyTemperature()
+            if _room_temperature is not None and _room_temperature != PYVICARE_ERROR:
+                self._current_temperature = _room_temperature
+            elif _supply_temperature != PYVICARE_ERROR:
+                self._current_temperature = _supply_temperature
+            else:
+                self._current_temperature = None
+            self._current_program = self._api.getActiveProgram()
 
-	        # Update the generic device attributes
-	        self._attributes = {}
-	        self._attributes["room_temperature"] = _room_temperature
-	        self._attributes["supply_temperature"] = _supply_temperature
-	        self._attributes["outside_temperature"] = self._api.getOutsideTemperature()
-	        self._attributes["active_vicare_program"] = self._current_program
-	        self._attributes["active_vicare_mode"] = self._current_mode
-	        self._attributes["heating_curve_slope"] = self._api.getHeatingCurveSlope()
-	        self._attributes["heating_curve_shift"] = self._api.getHeatingCurveShift()
-	        self._attributes[
-	            "month_since_last_service"
-	        ] = self._api.getMonthSinceLastService()
-	        self._attributes["date_last_service"] = self._api.getLastServiceDate()
-	        self._attributes["error_history"] = self._api.getErrorHistory()
-	        self._attributes["active_error"] = self._api.getActiveError()
-	        self._attributes[
-	            "circulationpump_active"
-	        ] = self._api.getCirculationPumpActive()
-	
-	        # Update the specific device attributes
-	        if self._heating_type == HeatingType.gas:
-	            self._attributes["burner_active"] = self._api.getBurnerActive()
-	            self._attributes["burner_modulation"] = self._api.getBurnerModulation()
-	            self._attributes["boiler_temperature"] = self._api.getBoilerTemperature()
-	            self._attributes["current_power"] = self._api.getCurrentPower()
-	            self._attributes[
-	                "gas_consumption_heating_days"
-	            ] = self._api.getGasConsumptionHeatingDays()
-	            self._attributes[
-	                "gas_consumption_heating_today"
-	            ] = self._api.getGasConsumptionHeatingToday()
-	            self._attributes[
-	                "gas_consumption_heating_weeks"
-	            ] = self._api.getGasConsumptionHeatingWeeks()
-	            self._attributes[
-	                "gas_consumption_heating_this_week"
-	            ] = self._api.getGasConsumptionHeatingThisWeek()
-	            self._attributes[
-	                "gas_consumption_heating_months"
-	            ] = self._api.getGasConsumptionHeatingMonths()
-	            self._attributes[
-	                "gas_consumption_heating_this_month"
-	            ] = self._api.getGasConsumptionHeatingThisMonth()
-	            self._attributes[
-	                "gas_consumption_heating_years"
-	            ] = self._api.getGasConsumptionHeatingYears()
-	            self._attributes[
-	                "gas_consumption_heating_this_year"
-	            ] = self._api.getGasConsumptionHeatingThisYear()
-	        elif self._heating_type == HeatingType.heatpump:
-	            self._attributes["compressor_active"] = self._api.getCompressorActive()
-	            self._attributes["return_temperature"] = self._api.getReturnTemperature()
+            # The getCurrentDesiredTemperature call can yield 'error' (str) when the system is in standby
+            desired_temperature = self._api.getCurrentDesiredTemperature()
+            if desired_temperature == PYVICARE_ERROR:
+                desired_temperature = None
+
+            self._target_temperature = desired_temperature
+
+            self._current_mode = self._api.getActiveMode()
+
+            # Update the generic device attributes
+            self._attributes = {}
+            self._attributes["room_temperature"] = _room_temperature
+            self._attributes["supply_temperature"] = _supply_temperature
+            self._attributes["outside_temperature"] = self._api.getOutsideTemperature()
+            self._attributes["active_vicare_program"] = self._current_program
+            self._attributes["active_vicare_mode"] = self._current_mode
+            self._attributes["heating_curve_slope"] = self._api.getHeatingCurveSlope()
+            self._attributes["heating_curve_shift"] = self._api.getHeatingCurveShift()
+            self._attributes[
+                "month_since_last_service"
+            ] = self._api.getMonthSinceLastService()
+            self._attributes["date_last_service"] = self._api.getLastServiceDate()
+            self._attributes["error_history"] = self._api.getErrorHistory()
+            self._attributes["active_error"] = self._api.getActiveError()
+            self._attributes[
+                "circulationpump_active"
+            ] = self._api.getCirculationPumpActive()
+
+            # Update the specific device attributes
+            if self._heating_type == HeatingType.gas:
+                self._attributes["burner_active"] = self._api.getBurnerActive()
+                self._attributes["burner_modulation"] = self._api.getBurnerModulation()
+                self._attributes[
+                    "boiler_temperature"
+                ] = self._api.getBoilerTemperature()
+                self._attributes["current_power"] = self._api.getCurrentPower()
+                self._attributes[
+                    "gas_consumption_heating_days"
+                ] = self._api.getGasConsumptionHeatingDays()
+                self._attributes[
+                    "gas_consumption_heating_today"
+                ] = self._api.getGasConsumptionHeatingToday()
+                self._attributes[
+                    "gas_consumption_heating_weeks"
+                ] = self._api.getGasConsumptionHeatingWeeks()
+                self._attributes[
+                    "gas_consumption_heating_this_week"
+                ] = self._api.getGasConsumptionHeatingThisWeek()
+                self._attributes[
+                    "gas_consumption_heating_months"
+                ] = self._api.getGasConsumptionHeatingMonths()
+                self._attributes[
+                    "gas_consumption_heating_this_month"
+                ] = self._api.getGasConsumptionHeatingThisMonth()
+                self._attributes[
+                    "gas_consumption_heating_years"
+                ] = self._api.getGasConsumptionHeatingYears()
+                self._attributes[
+                    "gas_consumption_heating_this_year"
+                ] = self._api.getGasConsumptionHeatingThisYear()
+            elif self._heating_type == HeatingType.heatpump:
+                self._attributes["compressor_active"] = self._api.getCompressorActive()
+                self._attributes[
+                    "return_temperature"
+                ] = self._api.getReturnTemperature()
         except requests.exceptions.ConnectionError:
-            _LOGGER.error("Unable to retrieve data from %s", _RESOURCE)
+            _LOGGER.error("Unable to retrieve data from ViCare server")
             return
         except simplejson.errors.JSONDecodeError:
-            _LOGGER.error("Unable to retrieve data from %s", _RESOURCE)
+            _LOGGER.error("Unable to decode data from ViCare server")
             return
-	
+
     @property
     def supported_features(self):
         """Return the list of supported features."""
