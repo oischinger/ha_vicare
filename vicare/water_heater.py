@@ -88,6 +88,33 @@ class ViCareWater(WaterHeaterDevice):
             )
 
             self._current_mode = self._api.getActiveMode()
+            # Update the generic device attributes
+            self._attributes = {}
+            if self._heating_type == HeatingType.gas:
+                self._attributes[
+                    "gas_consumption_dhw_days"
+                ] = self._api.getGasConsumptionDomesticHotWaterDays()
+                self._attributes[
+                    "gas_consumption_dhw_today"
+                ] = self._api.getGasConsumptionDomesticHotWaterToday()
+                self._attributes[
+                    "gas_consumption_dhw_weeks"
+                ] = self._api.getGasConsumptionDomesticHotWaterWeeks()
+                self._attributes[
+                    "gas_consumption_dhw_this_week"
+                ] = self._api.getGasConsumptionDomesticHotWaterThisWeek()
+                self._attributes[
+                    "gas_consumption_dhw_months"
+                ] = self._api.getGasConsumptionDomesticHotWaterMonths()
+                self._attributes[
+                    "gas_consumption_dhw_this_month"
+                ] = self._api.getGasConsumptionDomesticHotWaterThisMonth()
+                self._attributes[
+                    "gas_consumption_dhw_years"
+                ] = self._api.getGasConsumptionDomesticHotWaterYears()
+                self._attributes[
+                    "gas_consumption_dhw_this_year"
+                ] = self._api.getGasConsumptionDomesticHotWaterThisYear()
         except requests.exceptions.ConnectionError:
             _LOGGER.error("Unable to retrieve data from ViCare server")
         except ValueError:
@@ -149,3 +176,8 @@ class ViCareWater(WaterHeaterDevice):
     def operation_list(self):
         """Return the list of available operation modes."""
         return list(HA_TO_VICARE_HVAC_DHW)
+
+    @property
+    def device_state_attributes(self):
+        """Show Device Attributes."""
+        return self._attributes
