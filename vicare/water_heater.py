@@ -1,19 +1,15 @@
 """Viessmann ViCare water_heater device."""
 import logging
+
 import requests
-import simplejson
 
 from homeassistant.components.water_heater import (
     SUPPORT_TARGET_TEMPERATURE,
     WaterHeaterDevice,
 )
-from homeassistant.const import TEMP_CELSIUS, ATTR_TEMPERATURE, PRECISION_WHOLE
+from homeassistant.const import ATTR_TEMPERATURE, PRECISION_WHOLE, TEMP_CELSIUS
 
-from . import DOMAIN as VICARE_DOMAIN
-from . import VICARE_API
-from . import VICARE_NAME
-from . import VICARE_HEATING_TYPE
-from . import HeatingType
+from . import DOMAIN as VICARE_DOMAIN, VICARE_API, VICARE_HEATING_TYPE, VICARE_NAME
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -82,57 +78,20 @@ class ViCareWater(WaterHeaterDevice):
         """Let HA know there has been an update from the ViCare API."""
         try:
             current_temperature = self._api.getDomesticHotWaterStorageTemperature()
-            if (
-                current_temperature is not None
-                and current_temperature != PYVICARE_ERROR
-            ):
+            if current_temperature != PYVICARE_ERROR:
                 self._current_temperature = current_temperature
             else:
                 self._current_temperature = None
 
-            target_temperature = self._api.getDomesticHotWaterConfiguredTemperature()
-            if target_temperature is not None and target_temperature != PYVICARE_ERROR:
-                self._target_temperature = (
-                    self._api.getDomesticHotWaterConfiguredTemperature()
-                )
-            else:
-                self._target_temperature = None
+            self._target_temperature = (
+                self._api.getDomesticHotWaterConfiguredTemperature()
+            )
 
             self._current_mode = self._api.getActiveMode()
-
-            # Update the generic device attributes
-            self._attributes = {}
-            if self._heating_type == HeatingType.gas:
-                self._attributes[
-                    "gas_consumption_dhw_days"
-                ] = self._api.getGasConsumptionDomesticHotWaterDays()
-                self._attributes[
-                    "gas_consumption_dhw_today"
-                ] = self._api.getGasConsumptionDomesticHotWaterToday()
-                self._attributes[
-                    "gas_consumption_dhw_weeks"
-                ] = self._api.getGasConsumptionDomesticHotWaterWeeks()
-                self._attributes[
-                    "gas_consumption_dhw_this_week"
-                ] = self._api.getGasConsumptionDomesticHotWaterThisWeek()
-                self._attributes[
-                    "gas_consumption_dhw_months"
-                ] = self._api.getGasConsumptionDomesticHotWaterMonths()
-                self._attributes[
-                    "gas_consumption_dhw_this_month"
-                ] = self._api.getGasConsumptionDomesticHotWaterThisMonth()
-                self._attributes[
-                    "gas_consumption_dhw_years"
-                ] = self._api.getGasConsumptionDomesticHotWaterYears()
-                self._attributes[
-                    "gas_consumption_dhw_this_year"
-                ] = self._api.getGasConsumptionDomesticHotWaterThisYear()
         except requests.exceptions.ConnectionError:
             _LOGGER.error("Unable to retrieve data from ViCare server")
-            return
-        except simplejson.errors.JSONDecodeError:
+        except ValueError:
             _LOGGER.error("Unable to decode data from ViCare server")
-            return
 
     @property
     def supported_features(self):
@@ -163,7 +122,8 @@ class ViCareWater(WaterHeaterDevice):
         """Set new target temperatures."""
         temp = kwargs.get(ATTR_TEMPERATURE)
         if temp is not None:
-            self._api.setDomesticHotWaterTemperature(self._target_temperature)
+            self._api.setDomesticHotWaterTemperature(temp)
+            self._target_temperature = temp
 
     @property
     def min_temp(self):
@@ -189,8 +149,3 @@ class ViCareWater(WaterHeaterDevice):
     def operation_list(self):
         """Return the list of available operation modes."""
         return list(HA_TO_VICARE_HVAC_DHW)
-
-    @property
-    def device_state_attributes(self):
-        """Show Device Attributes."""
-        return self._attributes

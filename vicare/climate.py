@@ -1,25 +1,29 @@
 """Viessmann ViCare climate device."""
 import logging
+
 import requests
-import simplejson
 
 from homeassistant.components.climate import ClimateDevice
 from homeassistant.components.climate.const import (
+    CURRENT_HVAC_HEAT,
+    CURRENT_HVAC_IDLE,
+    HVAC_MODE_AUTO,
+    HVAC_MODE_HEAT,
+    HVAC_MODE_OFF,
+    PRESET_COMFORT,
+    PRESET_ECO,
     SUPPORT_PRESET_MODE,
     SUPPORT_TARGET_TEMPERATURE,
-    PRESET_ECO,
-    PRESET_COMFORT,
-    HVAC_MODE_OFF,
-    HVAC_MODE_HEAT,
-    HVAC_MODE_AUTO,
 )
-from homeassistant.const import TEMP_CELSIUS, ATTR_TEMPERATURE, PRECISION_WHOLE
+from homeassistant.const import ATTR_TEMPERATURE, PRECISION_WHOLE, TEMP_CELSIUS
 
-from . import DOMAIN as VICARE_DOMAIN
-from . import VICARE_API
-from . import VICARE_NAME
-from . import VICARE_HEATING_TYPE
-from . import HeatingType
+from . import (
+    DOMAIN as VICARE_DOMAIN,
+    VICARE_API,
+    VICARE_HEATING_TYPE,
+    VICARE_NAME,
+    HeatingType,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -107,6 +111,7 @@ class ViCareClimate(ClimateDevice):
         self._current_temperature = None
         self._current_program = None
         self._heating_type = heating_type
+        self._current_action = None
 
     def update(self):
         """Let HA know there has been an update from the ViCare API."""
@@ -151,47 +156,23 @@ class ViCareClimate(ClimateDevice):
 
             # Update the specific device attributes
             if self._heating_type == HeatingType.gas:
-                self._attributes["burner_active"] = self._api.getBurnerActive()
+                self._current_action = self._api.getBurnerActive()
+
                 self._attributes["burner_modulation"] = self._api.getBurnerModulation()
                 self._attributes[
                     "boiler_temperature"
                 ] = self._api.getBoilerTemperature()
-                self._attributes["current_power"] = self._api.getCurrentPower()
-                self._attributes[
-                    "gas_consumption_heating_days"
-                ] = self._api.getGasConsumptionHeatingDays()
-                self._attributes[
-                    "gas_consumption_heating_today"
-                ] = self._api.getGasConsumptionHeatingToday()
-                self._attributes[
-                    "gas_consumption_heating_weeks"
-                ] = self._api.getGasConsumptionHeatingWeeks()
-                self._attributes[
-                    "gas_consumption_heating_this_week"
-                ] = self._api.getGasConsumptionHeatingThisWeek()
-                self._attributes[
-                    "gas_consumption_heating_months"
-                ] = self._api.getGasConsumptionHeatingMonths()
-                self._attributes[
-                    "gas_consumption_heating_this_month"
-                ] = self._api.getGasConsumptionHeatingThisMonth()
-                self._attributes[
-                    "gas_consumption_heating_years"
-                ] = self._api.getGasConsumptionHeatingYears()
-                self._attributes[
-                    "gas_consumption_heating_this_year"
-                ] = self._api.getGasConsumptionHeatingThisYear()
+
             elif self._heating_type == HeatingType.heatpump:
-                self._attributes["compressor_active"] = self._api.getCompressorActive()
+                self._current_action = self._api.getCompressorActive()
+
                 self._attributes[
                     "return_temperature"
                 ] = self._api.getReturnTemperature()
         except requests.exceptions.ConnectionError:
             _LOGGER.error("Unable to retrieve data from ViCare server")
-            return
-        except simplejson.errors.JSONDecodeError:
+        except ValueError:
             _LOGGER.error("Unable to decode data from ViCare server")
-            return
 
     @property
     def supported_features(self):
@@ -239,6 +220,13 @@ class ViCareClimate(ClimateDevice):
     def hvac_modes(self):
         """Return the list of available hvac modes."""
         return list(HA_TO_VICARE_HVAC_HEATING)
+
+    @property
+    def hvac_action(self):
+        """Return the current hvac action."""
+        if self._current_action:
+            return CURRENT_HVAC_HEAT
+        return CURRENT_HVAC_IDLE
 
     @property
     def min_temp(self):
