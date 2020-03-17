@@ -1,5 +1,6 @@
 """Viessmann ViCare water_heater device."""
 import logging
+from datetime import timedelta
 
 import requests
 
@@ -42,6 +43,7 @@ HA_TO_VICARE_HVAC_DHW = {
 
 PYVICARE_ERROR = "error"
 
+SCAN_INTERVAL = timedelta(seconds=900)
 
 def setup_platform(hass, config, add_entities, discovery_info=None):
     """Create the ViCare water_heater devices."""
