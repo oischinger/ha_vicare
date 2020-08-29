@@ -3,7 +3,7 @@ import logging
 
 import requests
 
-from homeassistant.components.climate import ClimateDevice
+from homeassistant.components.climate import ClimateEntity
 from homeassistant.components.climate.const import (
     CURRENT_HVAC_HEAT,
     CURRENT_HVAC_IDLE,
@@ -15,10 +15,17 @@ from homeassistant.components.climate.const import (
     SUPPORT_PRESET_MODE,
     SUPPORT_TARGET_TEMPERATURE,
 )
-from homeassistant.const import ATTR_TEMPERATURE, PRECISION_WHOLE, TEMP_CELSIUS
+from homeassistant.const import (
+    ATTR_COMMAND,
+    ATTR_ENTITY_ID,
+    ATTR_TEMPERATURE,
+    PRECISION_WHOLE,
+    TEMP_CELSIUS
+)
 
 from . import (
     DOMAIN as VICARE_DOMAIN,
+    PYVICARE_ERROR,
     VICARE_API,
     VICARE_HEATING_TYPE,
     VICARE_NAME,
@@ -77,8 +84,6 @@ HA_TO_VICARE_PRESET_HEATING = {
     PRESET_ECO: VICARE_PROGRAM_ECO,
 }
 
-PYVICARE_ERROR = "error"
-
 def setup_platform(hass, config, add_entities, discovery_info=None):
     """Create the ViCare climate devices."""
     if discovery_info is None:
@@ -96,8 +101,12 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
     )
 
 
-class ViCareClimate(ClimateDevice):
+class ViCareClimate(ClimateEntity):
     """Representation of the ViCare heating climate device."""
+
+    async def async_added_to_hass(self):
+        """Call when entity is added to hass."""
+        self.hass.data[VICARE_DOMAIN]["entities"]["climate"].append(self)
 
     def __init__(self, name, api, heating_type):
         """Initialize the climate device."""
@@ -137,8 +146,6 @@ class ViCareClimate(ClimateDevice):
             # Update the generic device attributes
             self._attributes = {}
             self._attributes["room_temperature"] = _room_temperature
-            self._attributes["supply_temperature"] = _supply_temperature
-            self._attributes["outside_temperature"] = self._api.getOutsideTemperature()
             self._attributes["active_vicare_program"] = self._current_program
             self._attributes["active_vicare_mode"] = self._current_mode
             self._attributes["heating_curve_slope"] = self._api.getHeatingCurveSlope()
@@ -149,64 +156,14 @@ class ViCareClimate(ClimateDevice):
             self._attributes["date_last_service"] = self._api.getLastServiceDate()
             self._attributes["error_history"] = self._api.getErrorHistory()
             self._attributes["active_error"] = self._api.getActiveError()
-            self._attributes[
-                "circulationpump_active"
-            ] = self._api.getCirculationPumpActive()
 
             # Update the specific device attributes
             if self._heating_type == HeatingType.gas:
                 self._current_action = self._api.getBurnerActive()
 
-                self._attributes["burner_modulation"] = self._api.getBurnerModulation()
-                self._attributes[
-                    "boiler_temperature"
-                ] = self._api.getBoilerTemperature()
-                
-                self._attributes["current_power"] = self._api.getCurrentPower()
-                self._attributes[
-                    "gas_consumption_heating_days"
-                ] = self._api.getGasConsumptionHeatingDays()
-                self._attributes[
-                    "gas_consumption_heating_today"
-                ] = self._api.getGasConsumptionHeatingToday()
-                self._attributes[
-                    "gas_consumption_heating_weeks"
-                ] = self._api.getGasConsumptionHeatingWeeks()
-                self._attributes[
-                    "gas_consumption_heating_this_week"
-                ] = self._api.getGasConsumptionHeatingThisWeek()
-                self._attributes[
-                    "gas_consumption_heating_months"
-                ] = self._api.getGasConsumptionHeatingMonths()
-                self._attributes[
-                    "gas_consumption_heating_this_month"
-                ] = self._api.getGasConsumptionHeatingThisMonth()
-                self._attributes[
-                    "gas_consumption_heating_years"
-                ] = self._api.getGasConsumptionHeatingYears()
-                self._attributes[
-                    "gas_consumption_heating_this_year"
-                ] = self._api.getGasConsumptionHeatingThisYear()
-                self._attributes["burner_hours"] = self._api.getBurnerHours()
-                self._attributes["burner_starts"] = self._api.getBurnerStarts()
-                self._attributes["burner_power"] = self._api.getCurrentPower()
-
-                self._attributes["heating_gas_consumption_today"] = self._api.getGasConsumptionHeatingToday()                           
-                self._attributes["hotwater_gas_consumption_today"] = self._api.getGasConsumptionDomesticHotWaterToday()
-
-                self._attributes["burner_hours"] = self._api.getBurnerHours()
-                self._attributes["burner_starts"] = self._api.getBurnerStarts()
-                self._attributes["burner_power"] = self._api.getCurrentPower()
-
-                self._attributes["heating_gas_consumption_today"] = self._api.getGasConsumptionHeatingToday()                           
-                self._attributes["hotwater_gas_consumption_today"] = self._api.getGasConsumptionDomesticHotWaterToday()
-
             elif self._heating_type == HeatingType.heatpump:
                 self._current_action = self._api.getCompressorActive()
 
-                self._attributes[
-                    "return_temperature"
-                ] = self._api.getReturnTemperature()
         except requests.exceptions.ConnectionError:
             _LOGGER.error("Unable to retrieve data from ViCare server")
         except ValueError:
@@ -317,3 +274,14 @@ class ViCareClimate(ClimateDevice):
     def device_state_attributes(self):
         """Show Device Attributes."""
         return self._attributes
+
+    def vicare_mode(self, mode):
+        """Set a new hvac mode on the ViCare API."""
+        if mode not in VICARE_TO_HA_HVAC_HEATING:
+            _LOGGER.error(
+                "Cannot set invalid vicare mode: %s", mode
+            )
+            return
+
+        _LOGGER.debug("Setting hvac mode to %s / %s", mode)
+        self._api.setMode(mode)
