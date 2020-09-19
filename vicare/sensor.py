@@ -13,7 +13,7 @@ from homeassistant.const import (
     ENERGY_KILO_WATT_HOUR,
     POWER_WATT,
     TEMP_CELSIUS,
-    UNIT_PERCENTAGE,
+    PERCENTAGE,
 )
 from homeassistant.helpers.entity import Entity
 
@@ -81,7 +81,7 @@ SENSOR_TYPES = {
     SENSOR_BURNER_MODULATION: {
         CONF_NAME: "Burner modulation",
         CONF_ICON: "mdi:percent",
-        CONF_UNIT_OF_MEASUREMENT: UNIT_PERCENTAGE,
+        CONF_UNIT_OF_MEASUREMENT: PERCENTAGE,
         CONF_GETTER: lambda api: api.getBurnerModulation(),
         CONF_DEVICE_CLASS: None,
     },
