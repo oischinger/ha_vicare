@@ -3,13 +3,12 @@ import enum
 import logging
 
 from PyViCare.PyViCareDevice import Device
+from PyViCare.PyViCareFuelCell import FuelCell
 from PyViCare.PyViCareGazBoiler import GazBoiler
 from PyViCare.PyViCareHeatPump import HeatPump
 import voluptuous as vol
 
 from homeassistant.const import (
-    ATTR_COMMAND,
-    ATTR_ENTITY_ID,
     CONF_NAME,
     CONF_PASSWORD,
     CONF_SCAN_INTERVAL,
@@ -21,7 +20,7 @@ from homeassistant.helpers.storage import STORAGE_DIR
 
 _LOGGER = logging.getLogger(__name__)
 
-VICARE_PLATFORMS = ["climate", "sensor", "binary_sensor", "water_heater"]
+PLATFORMS = ["climate", "sensor", "binary_sensor", "water_heater"]
 
 DOMAIN = "vicare"
 PYVICARE_ERROR = "error"
@@ -33,11 +32,6 @@ CONF_CIRCUIT = "circuit"
 CONF_HEATING_TYPE = "heating_type"
 DEFAULT_HEATING_TYPE = "generic"
 
-SERVICE_VICARE_MODE = "vicare_mode"
-
-SERVICE_VICARE_MODE_SCHEMA = vol.Schema(
-    {vol.Required(ATTR_ENTITY_ID): cv.entity_ids, vol.Required(ATTR_COMMAND): cv.string}
-)
 
 class HeatingType(enum.Enum):
     """Possible options for heating type."""
@@ -45,6 +39,7 @@ class HeatingType(enum.Enum):
     generic = "generic"
     gas = "gas"
     heatpump = "heatpump"
+    fuelcell = "fuelcell"
 
 
 CONFIG_SCHEMA = vol.Schema(
@@ -84,6 +79,8 @@ def setup(hass, config):
             vicare_api = GazBoiler(conf[CONF_USERNAME], conf[CONF_PASSWORD], **params)
         elif heating_type == HeatingType.heatpump:
             vicare_api = HeatPump(conf[CONF_USERNAME], conf[CONF_PASSWORD], **params)
+        elif heating_type == HeatingType.fuelcell:
+            vicare_api = FuelCell(conf[CONF_USERNAME], conf[CONF_PASSWORD], **params)
         else:
             vicare_api = Device(conf[CONF_USERNAME], conf[CONF_PASSWORD], **params)
     except AttributeError:
@@ -93,32 +90,11 @@ def setup(hass, config):
         return False
 
     hass.data[DOMAIN] = {}
-    hass.data[DOMAIN]["entities"] = {}
-    hass.data[DOMAIN]["entities"]["climate"] = []
     hass.data[DOMAIN][VICARE_API] = vicare_api
     hass.data[DOMAIN][VICARE_NAME] = conf[CONF_NAME]
     hass.data[DOMAIN][VICARE_HEATING_TYPE] = heating_type
 
-    for platform in VICARE_PLATFORMS:
+    for platform in PLATFORMS:
         discovery.load_platform(hass, platform, DOMAIN, {}, config)
 
-    def service_vicare_mode(service):
-        """Dispatch service calls to target entities."""
-        cmd = service.data[ATTR_COMMAND]
-        entity_id = service.data[ATTR_ENTITY_ID]
-        target_devices = [
-            dev
-            for dev in hass.data[DOMAIN]["entities"]["climate"]
-            if dev.entity_id in entity_id
-        ]
-
-        for target_device in target_devices:
-            target_device.vicare_mode(cmd)
-
-    hass.services.register(
-        DOMAIN,
-        SERVICE_VICARE_MODE,
-        service_vicare_mode,
-        schema=SERVICE_VICARE_MODE_SCHEMA,
-    )
     return True

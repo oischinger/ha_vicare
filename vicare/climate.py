@@ -2,6 +2,7 @@
 import logging
 
 import requests
+import voluptuous as vol
 
 from homeassistant.components.climate import ClimateEntity
 from homeassistant.components.climate.const import (
@@ -15,13 +16,8 @@ from homeassistant.components.climate.const import (
     SUPPORT_PRESET_MODE,
     SUPPORT_TARGET_TEMPERATURE,
 )
-from homeassistant.const import (
-    ATTR_COMMAND,
-    ATTR_ENTITY_ID,
-    ATTR_TEMPERATURE,
-    PRECISION_WHOLE,
-    TEMP_CELSIUS
-)
+from homeassistant.const import ATTR_TEMPERATURE, PRECISION_WHOLE, TEMP_CELSIUS
+from homeassistant.helpers import entity_platform
 
 from . import (
     DOMAIN as VICARE_DOMAIN,
@@ -34,7 +30,11 @@ from . import (
 
 _LOGGER = logging.getLogger(__name__)
 
+SERVICE_SET_VICARE_MODE = "set_vicare_mode"
+SERVICE_SET_VICARE_MODE_ATTR_MODE = "vicare_mode"
+
 VICARE_MODE_DHW = "dhw"
+VICARE_MODE_HEATING = "heating"
 VICARE_MODE_DHWANDHEATING = "dhwAndHeating"
 VICARE_MODE_DHWANDHEATINGCOOLING = "dhwAndHeatingCooling"
 VICARE_MODE_FORCEDREDUCED = "forcedReduced"
@@ -61,6 +61,7 @@ SUPPORT_FLAGS_HEATING = SUPPORT_TARGET_TEMPERATURE | SUPPORT_PRESET_MODE
 
 VICARE_TO_HA_HVAC_HEATING = {
     VICARE_MODE_DHW: HVAC_MODE_OFF,
+    VICARE_MODE_HEATING: HVAC_MODE_HEAT,
     VICARE_MODE_DHWANDHEATING: HVAC_MODE_AUTO,
     VICARE_MODE_DHWANDHEATINGCOOLING: HVAC_MODE_AUTO,
     VICARE_MODE_FORCEDREDUCED: HVAC_MODE_OFF,
@@ -84,29 +85,40 @@ HA_TO_VICARE_PRESET_HEATING = {
     PRESET_ECO: VICARE_PROGRAM_ECO,
 }
 
-def setup_platform(hass, config, add_entities, discovery_info=None):
+
+async def async_setup_platform(
+    hass, hass_config, async_add_entities, discovery_info=None
+):
     """Create the ViCare climate devices."""
     if discovery_info is None:
         return
     vicare_api = hass.data[VICARE_DOMAIN][VICARE_API]
     heating_type = hass.data[VICARE_DOMAIN][VICARE_HEATING_TYPE]
-    add_entities(
+    async_add_entities(
         [
             ViCareClimate(
-                f"{hass.data[VICARE_DOMAIN][VICARE_NAME]}  Heating",
+                f"{hass.data[VICARE_DOMAIN][VICARE_NAME]} Heating",
                 vicare_api,
                 heating_type,
             )
         ]
     )
 
+    platform = entity_platform.async_get_current_platform()
+
+    platform.async_register_entity_service(
+        SERVICE_SET_VICARE_MODE,
+        {
+            vol.Required(SERVICE_SET_VICARE_MODE_ATTR_MODE): vol.In(
+                VICARE_TO_HA_HVAC_HEATING
+            )
+        },
+        "set_vicare_mode",
+    )
+
 
 class ViCareClimate(ClimateEntity):
     """Representation of the ViCare heating climate device."""
-
-    async def async_added_to_hass(self):
-        """Call when entity is added to hass."""
-        self.hass.data[VICARE_DOMAIN]["entities"]["climate"].append(self)
 
     def __init__(self, name, api, heating_type):
         """Initialize the climate device."""
@@ -163,7 +175,6 @@ class ViCareClimate(ClimateEntity):
 
             elif self._heating_type == HeatingType.heatpump:
                 self._current_action = self._api.getCompressorActive()
-
         except requests.exceptions.ConnectionError:
             _LOGGER.error("Unable to retrieve data from ViCare server")
         except ValueError:
@@ -203,10 +214,9 @@ class ViCareClimate(ClimateEntity):
         """Set a new hvac mode on the ViCare API."""
         vicare_mode = HA_TO_VICARE_HVAC_HEATING.get(hvac_mode)
         if vicare_mode is None:
-            _LOGGER.error(
-                "Cannot set invalid vicare mode: %s / %s", hvac_mode, vicare_mode
+            raise ValueError(
+                f"Cannot set invalid vicare mode: {hvac_mode} / {vicare_mode}"
             )
-            return
 
         _LOGGER.debug("Setting hvac mode to %s / %s", hvac_mode, vicare_mode)
         self._api.setMode(vicare_mode)
@@ -259,29 +269,22 @@ class ViCareClimate(ClimateEntity):
         """Set new preset mode and deactivate any existing programs."""
         vicare_program = HA_TO_VICARE_PRESET_HEATING.get(preset_mode)
         if vicare_program is None:
-            _LOGGER.error(
-                "Cannot set invalid vicare program: %s / %s",
-                preset_mode,
-                vicare_program,
+            raise ValueError(
+                f"Cannot set invalid vicare program: {preset_mode}/{vicare_program}"
             )
-            return
 
         _LOGGER.debug("Setting preset to %s / %s", preset_mode, vicare_program)
         self._api.deactivateProgram(self._current_program)
         self._api.activateProgram(vicare_program)
 
     @property
-    def device_state_attributes(self):
+    def extra_state_attributes(self):
         """Show Device Attributes."""
         return self._attributes
 
-    def vicare_mode(self, mode):
-        """Set a new hvac mode on the ViCare API."""
-        if mode not in VICARE_TO_HA_HVAC_HEATING:
-            _LOGGER.error(
-                "Cannot set invalid vicare mode: %s", mode
-            )
-            return
+    def set_vicare_mode(self, vicare_mode):
+        """Service function to set vicare modes directly."""
+        if vicare_mode not in VICARE_TO_HA_HVAC_HEATING:
+            raise ValueError(f"Cannot set invalid vicare mode: {vicare_mode}")
 
-        _LOGGER.debug("Setting hvac mode to %s / %s", mode)
-        self._api.setMode(mode)
+        self._api.setMode(vicare_mode)
