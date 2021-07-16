@@ -145,12 +145,14 @@ class ViCareClimate(ClimateEntity):
             else:
                 self._current_temperature = None
             self._current_program = self._api.getActiveProgram()
-
+            try:
             # The getCurrentDesiredTemperature call can yield 'error' (str) when the system is in standby
-            desired_temperature = self._api.getCurrentDesiredTemperature()
-            if desired_temperature == PYVICARE_ERROR:
+                desired_temperature = self._api.getCurrentDesiredTemperature()
+                if desired_temperature == PYVICARE_ERROR:
+                    desired_temperature = None
+            except:
                 desired_temperature = None
-
+            
             self._target_temperature = desired_temperature
 
             self._current_mode = self._api.getActiveMode()
@@ -162,12 +164,6 @@ class ViCareClimate(ClimateEntity):
             self._attributes["active_vicare_mode"] = self._current_mode
             self._attributes["heating_curve_slope"] = self._api.getHeatingCurveSlope()
             self._attributes["heating_curve_shift"] = self._api.getHeatingCurveShift()
-            self._attributes[
-                "month_since_last_service"
-            ] = self._api.getMonthSinceLastService()
-            self._attributes["date_last_service"] = self._api.getLastServiceDate()
-            self._attributes["error_history"] = self._api.getErrorHistory()
-            self._attributes["active_error"] = self._api.getActiveError()
 
             # Update the specific device attributes
             if self._heating_type == HeatingType.gas:
