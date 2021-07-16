@@ -146,10 +146,8 @@ class ViCareClimate(ClimateEntity):
                 self._current_temperature = None
             self._current_program = self._api.getActiveProgram()
             try:
-            # The getCurrentDesiredTemperature call can yield 'error' (str) when the system is in standby
+            # The getCurrentDesiredTemperature call can yield 'error' when the system is in standby
                 desired_temperature = self._api.getCurrentDesiredTemperature()
-                if desired_temperature == PYVICARE_ERROR:
-                    desired_temperature = None
             except:
                 desired_temperature = None
             
