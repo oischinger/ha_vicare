@@ -1,6 +1,7 @@
 """Viessmann ViCare water_heater device."""
 import logging
 
+from PyViCare.PyViCare import PyViCareNotSupportedFeatureError, PyViCareRateLimitError
 import requests
 
 from homeassistant.components.water_heater import (
@@ -9,13 +10,7 @@ from homeassistant.components.water_heater import (
 )
 from homeassistant.const import ATTR_TEMPERATURE, PRECISION_WHOLE, TEMP_CELSIUS
 
-from . import (
-    DOMAIN as VICARE_DOMAIN,
-    PYVICARE_ERROR,
-    VICARE_API,
-    VICARE_HEATING_TYPE,
-    VICARE_NAME,
-)
+from . import DOMAIN as VICARE_DOMAIN, VICARE_API, VICARE_HEATING_TYPE, VICARE_NAME
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -81,19 +76,31 @@ class ViCareWater(WaterHeaterEntity):
     def update(self):
         """Let HA know there has been an update from the ViCare API."""
         try:
-            current_temperature = self._api.getDomesticHotWaterStorageTemperature()
-            if current_temperature != PYVICARE_ERROR:
+            try:
+                current_temperature = self._api.getDomesticHotWaterStorageTemperature()
+            except PyViCareNotSupportedFeatureError as e:
+                _LOGGER.error("Feature not supported " + str(e))
+
+            if current_temperature is not None:
                 self._current_temperature = current_temperature
             else:
                 self._current_temperature = None
 
-            self._target_temperature = (
-                self._api.getDomesticHotWaterConfiguredTemperature()
-            )
+            try:
+                self._target_temperature = (
+                    self._api.getDomesticHotWaterConfiguredTemperature()
+                )
+            except PyViCareNotSupportedFeatureError as e:
+                _LOGGER.error("Feature not supported " + str(e))
 
-            self._current_mode = self._api.getActiveMode()
+            try:
+                self._current_mode = self._api.getActiveMode()
+            except PyViCareNotSupportedFeatureError as e:
+                _LOGGER.error("Feature not supported " + str(e))
         except requests.exceptions.ConnectionError:
             _LOGGER.error("Unable to retrieve data from ViCare server")
+        except PyViCareRateLimitError as e:
+            _LOGGER.error("Vicare API rate limit exceeded" + str(e))
         except ValueError:
             _LOGGER.error("Unable to decode data from ViCare server")
 

@@ -1,6 +1,7 @@
 """Viessmann ViCare climate device."""
 import logging
 
+from PyViCare.PyViCare import PyViCareNotSupportedFeatureError, PyViCareRateLimitError
 import requests
 import voluptuous as vol
 
@@ -21,7 +22,6 @@ from homeassistant.helpers import entity_platform
 
 from . import (
     DOMAIN as VICARE_DOMAIN,
-    PYVICARE_ERROR,
     VICARE_API,
     VICARE_HEATING_TYPE,
     VICARE_NAME,
@@ -136,41 +136,63 @@ class ViCareClimate(ClimateEntity):
     def update(self):
         """Let HA know there has been an update from the ViCare API."""
         try:
-            _room_temperature = self._api.getRoomTemperature()
-            _supply_temperature = self._api.getSupplyTemperature()
-            if _room_temperature is not None and _room_temperature != PYVICARE_ERROR:
+            _room_temperature = None
+            try:
+                _room_temperature = self._api.getRoomTemperature()
+            except PyViCareNotSupportedFeatureError as e:
+                _LOGGER.error("Feature not supported " + str(e))
+
+            _supply_temperature = None
+            try:
+                _supply_temperature = self._api.getSupplyTemperature()
+            except PyViCareNotSupportedFeatureError as e:
+                _LOGGER.error("Feature not supported " + str(e))
+
+            if _room_temperature is not None:
                 self._current_temperature = _room_temperature
-            elif _supply_temperature != PYVICARE_ERROR:
+            elif _supply_temperature is not None:
                 self._current_temperature = _supply_temperature
             else:
                 self._current_temperature = None
-            self._current_program = self._api.getActiveProgram()
+
             try:
-            # The getCurrentDesiredTemperature call can yield 'error' when the system is in standby
+                self._current_program = self._api.getActiveProgram()
+            except PyViCareNotSupportedFeatureError as e:
+                _LOGGER.error("Feature not supported " + str(e))
+
+            try:
                 desired_temperature = self._api.getCurrentDesiredTemperature()
-            except:
-                desired_temperature = None
-            
+            except PyViCareNotSupportedFeatureError as e:
+                _LOGGER.error("Feature not supported " + str(e))
+
             self._target_temperature = desired_temperature
 
-            self._current_mode = self._api.getActiveMode()
+            try:
+                self._current_mode = self._api.getActiveMode()
+            except PyViCareNotSupportedFeatureError as e:
+                _LOGGER.error("Feature not supported " + str(e))
 
             # Update the generic device attributes
             self._attributes = {}
-            self._attributes["room_temperature"] = _room_temperature
+            # TODO: catch exception for each attribute:
+            #  self._attributes["room_temperature"] = _room_temperature
             self._attributes["active_vicare_program"] = self._current_program
             self._attributes["active_vicare_mode"] = self._current_mode
             self._attributes["heating_curve_slope"] = self._api.getHeatingCurveSlope()
             self._attributes["heating_curve_shift"] = self._api.getHeatingCurveShift()
 
             # Update the specific device attributes
-            if self._heating_type == HeatingType.gas:
-                self._current_action = self._api.getBurnerActive()
-
-            elif self._heating_type == HeatingType.heatpump:
-                self._current_action = self._api.getCompressorActive()
+            try:
+                if self._heating_type == HeatingType.gas:
+                    self._current_action = self._api.getBurnerActive()
+                elif self._heating_type == HeatingType.heatpump:
+                    self._current_action = self._api.getCompressorActive()
+            except PyViCareNotSupportedFeatureError as e:
+                _LOGGER.error("Feature not supported " + str(e))
         except requests.exceptions.ConnectionError:
             _LOGGER.error("Unable to retrieve data from ViCare server")
+        except PyViCareRateLimitError as e:
+            _LOGGER.error("Vicare API rate limit exceeded" + str(e))
         except ValueError:
             _LOGGER.error("Unable to decode data from ViCare server")
 
