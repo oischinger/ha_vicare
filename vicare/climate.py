@@ -26,6 +26,7 @@ from . import (
     VICARE_HEATING_TYPE,
     VICARE_NAME,
     HeatingType,
+    catchNotSupported
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -137,16 +138,12 @@ class ViCareClimate(ClimateEntity):
         """Let HA know there has been an update from the ViCare API."""
         try:
             _room_temperature = None
-            try:
+            with catchNotSupported() as _room_temperature:
                 _room_temperature = self._api.getRoomTemperature()
-            except PyViCareNotSupportedFeatureError as e:
-                _LOGGER.error("Feature not supported " + str(e))
 
             _supply_temperature = None
-            try:
+            with catchNotSupported() as _supply_temperature:
                 _supply_temperature = self._api.getSupplyTemperature()
-            except PyViCareNotSupportedFeatureError as e:
-                _LOGGER.error("Feature not supported " + str(e))
 
             if _room_temperature is not None:
                 self._current_temperature = _room_temperature
@@ -155,40 +152,35 @@ class ViCareClimate(ClimateEntity):
             else:
                 self._current_temperature = None
 
-            try:
+            with catchNotSupported() as self._current_program:
                 self._current_program = self._api.getActiveProgram()
-            except PyViCareNotSupportedFeatureError as e:
-                _LOGGER.error("Feature not supported " + str(e))
 
-            try:
-                desired_temperature = self._api.getCurrentDesiredTemperature()
-            except PyViCareNotSupportedFeatureError as e:
-                _LOGGER.error("Feature not supported " + str(e))
+            with catchNotSupported() as self._target_temperature:
+                self._target_temperature = self._api.getCurrentDesiredTemperature()
 
-            self._target_temperature = desired_temperature
-
-            try:
+            with catchNotSupported() as self._current_mode:
                 self._current_mode = self._api.getActiveMode()
-            except PyViCareNotSupportedFeatureError as e:
-                _LOGGER.error("Feature not supported " + str(e))
 
             # Update the generic device attributes
             self._attributes = {}
-            # TODO: catch exception for each attribute:
-            #  self._attributes["room_temperature"] = _room_temperature
+
+            self._attributes["room_temperature"] = _room_temperature
             self._attributes["active_vicare_program"] = self._current_program
             self._attributes["active_vicare_mode"] = self._current_mode
-            self._attributes["heating_curve_slope"] = self._api.getHeatingCurveSlope()
-            self._attributes["heating_curve_shift"] = self._api.getHeatingCurveShift()
+
+            with catchNotSupported() as self._attributes["heating_curve_slope"]:
+                self._attributes["heating_curve_slope"] = self._api.getHeatingCurveSlope()
+
+            with catchNotSupported() as self._attributes["heating_curve_shift"]:
+                self._attributes["heating_curve_shift"] = self._api.getHeatingCurveShift()
 
             # Update the specific device attributes
-            try:
-                if self._heating_type == HeatingType.gas:
+            if self._heating_type == HeatingType.gas:
+                with catchNotSupported() as self._current_action:
                     self._current_action = self._api.getBurnerActive()
-                elif self._heating_type == HeatingType.heatpump:
+            elif self._heating_type == HeatingType.heatpump:
+                with catchNotSupported() as self._current_action:
                     self._current_action = self._api.getCompressorActive()
-            except PyViCareNotSupportedFeatureError as e:
-                _LOGGER.error("Feature not supported " + str(e))
         except requests.exceptions.ConnectionError:
             _LOGGER.error("Unable to retrieve data from ViCare server")
         except PyViCareRateLimitError as e:

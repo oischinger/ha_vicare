@@ -10,7 +10,7 @@ from homeassistant.components.water_heater import (
 )
 from homeassistant.const import ATTR_TEMPERATURE, PRECISION_WHOLE, TEMP_CELSIUS
 
-from . import DOMAIN as VICARE_DOMAIN, VICARE_API, VICARE_HEATING_TYPE, VICARE_NAME
+from . import DOMAIN as VICARE_DOMAIN, VICARE_API, VICARE_HEATING_TYPE, VICARE_NAME, catchNotSupported
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -76,27 +76,15 @@ class ViCareWater(WaterHeaterEntity):
     def update(self):
         """Let HA know there has been an update from the ViCare API."""
         try:
-            try:
-                current_temperature = self._api.getDomesticHotWaterStorageTemperature()
-            except PyViCareNotSupportedFeatureError as e:
-                _LOGGER.error("Feature not supported " + str(e))
+            with catchNotSupported() as self._current_temperature:
+                self._current_temperature = self._api.getDomesticHotWaterStorageTemperature()
 
-            if current_temperature is not None:
-                self._current_temperature = current_temperature
-            else:
-                self._current_temperature = None
+            with catchNotSupported() as self._target_temperature:
+                self._target_temperature = self._api.getDomesticHotWaterConfiguredTemperature()
 
-            try:
-                self._target_temperature = (
-                    self._api.getDomesticHotWaterConfiguredTemperature()
-                )
-            except PyViCareNotSupportedFeatureError as e:
-                _LOGGER.error("Feature not supported " + str(e))
-
-            try:
+            with catchNotSupported() as self._current_mode:
                 self._current_mode = self._api.getActiveMode()
-            except PyViCareNotSupportedFeatureError as e:
-                _LOGGER.error("Feature not supported " + str(e))
+
         except requests.exceptions.ConnectionError:
             _LOGGER.error("Unable to retrieve data from ViCare server")
         except PyViCareRateLimitError as e:
