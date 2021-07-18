@@ -26,6 +26,8 @@ SENSOR_CIRCULATION_PUMP_ACTIVE = "circulationpump_active"
 
 # gas sensors
 SENSOR_BURNER_ACTIVE = "burner_active"
+SENSOR_CHARGING_ACTIVE = "charging_active"
+SENSOR_DHW_PUMP_ACTIVE = "dhw_pump_active"
 
 # heatpump sensors
 SENSOR_COMPRESSOR_ACTIVE = "compressor_active"
@@ -45,6 +47,16 @@ SENSOR_TYPES = {
         CONF_NAME: "Burner active",
         CONF_DEVICE_CLASS: DEVICE_CLASS_POWER,
         CONF_GETTER: lambda api: api.getBurnerActive(),
+    },
+    SENSOR_CHARGING_ACTIVE: {
+        CONF_NAME: "Charging Active",
+        CONF_DEVICE_CLASS: DEVICE_CLASS_POWER,
+        CONF_GETTER: lambda api: api.getDomesticHotWaterChargingActive(),
+    },
+    SENSOR_DHW_PUMP_ACTIVE: {
+        CONF_NAME: "DHW Pump Active",
+        CONF_DEVICE_CLASS: DEVICE_CLASS_POWER,
+        CONF_GETTER: lambda api: api.getDomesticHotWaterPumpActive(),
     },
     # heatpump sensors
     SENSOR_COMPRESSOR_ACTIVE: {
@@ -77,7 +89,11 @@ SENSOR_TYPES = {
 SENSORS_GENERIC = [SENSOR_CIRCULATION_PUMP_ACTIVE]
 
 SENSORS_BY_HEATINGTYPE = {
-    HeatingType.gas: [SENSOR_BURNER_ACTIVE],
+    HeatingType.gas: [
+        SENSOR_BURNER_ACTIVE,
+        SENSOR_CHARGING_ACTIVE,
+        SENSOR_DHW_PUMP_ACTIVE,
+    ],
     HeatingType.heatpump: [
         SENSOR_COMPRESSOR_ACTIVE,
         SENSOR_HEATINGROD_OVERALL,
