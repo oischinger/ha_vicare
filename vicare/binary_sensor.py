@@ -23,6 +23,7 @@ _LOGGER = logging.getLogger(__name__)
 CONF_GETTER = "getter"
 
 SENSOR_CIRCULATION_PUMP_ACTIVE = "circulationpump_active"
+SENSOR_FROST_PROTECTION_ACTIVE = "frost_protection_active"
 
 # gas sensors
 SENSOR_BURNER_ACTIVE = "burner_active"
@@ -41,6 +42,11 @@ SENSOR_TYPES = {
         CONF_NAME: "Circulation pump active",
         CONF_DEVICE_CLASS: DEVICE_CLASS_POWER,
         CONF_GETTER: lambda api: api.getCirculationPumpActive(),
+    },
+    SENSOR_FROST_PROTECTION_ACTIVE: {
+        CONF_NAME: "Frost protection active",
+        CONF_DEVICE_CLASS: DEVICE_CLASS_POWER,
+        CONF_GETTER: lambda api: api.getFrostProtectionActive(),
     },
     # gas sensors
     SENSOR_BURNER_ACTIVE: {
@@ -86,7 +92,7 @@ SENSOR_TYPES = {
     },
 }
 
-SENSORS_GENERIC = [SENSOR_CIRCULATION_PUMP_ACTIVE]
+SENSORS_GENERIC = [SENSOR_CIRCULATION_PUMP_ACTIVE, SENSOR_FROST_PROTECTION_ACTIVE]
 
 SENSORS_BY_HEATINGTYPE = {
     HeatingType.gas: [
