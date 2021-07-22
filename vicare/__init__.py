@@ -1,7 +1,9 @@
 """The ViCare integration."""
 import enum
 import logging
+from contextlib import contextmanager
 
+from PyViCare.PyViCare import PyViCareNotSupportedFeatureError, PyViCareRateLimitError
 from PyViCare.PyViCareDevice import Device
 from PyViCare.PyViCareFuelCell import FuelCell
 from PyViCare.PyViCareGazBoiler import GazBoiler
@@ -9,11 +11,11 @@ from PyViCare.PyViCareHeatPump import HeatPump
 import voluptuous as vol
 
 from homeassistant.const import (
+    CONF_CLIENT_ID,
     CONF_NAME,
     CONF_PASSWORD,
     CONF_SCAN_INTERVAL,
     CONF_USERNAME,
-    CONF_CLIENT_ID,
 )
 from homeassistant.helpers import discovery
 import homeassistant.helpers.config_validation as cv
@@ -24,7 +26,6 @@ _LOGGER = logging.getLogger(__name__)
 PLATFORMS = ["climate", "sensor", "binary_sensor", "water_heater"]
 
 DOMAIN = "vicare"
-PYVICARE_ERROR = "error"
 VICARE_API = "api"
 VICARE_NAME = "name"
 VICARE_HEATING_TYPE = "heating_type"
@@ -42,6 +43,12 @@ class HeatingType(enum.Enum):
     heatpump = "heatpump"
     fuelcell = "fuelcell"
 
+@contextmanager
+def catchNotSupported():
+    try:
+        yield None
+    except PyViCareNotSupportedFeatureError:
+        pass
 
 CONFIG_SCHEMA = vol.Schema(
     {
