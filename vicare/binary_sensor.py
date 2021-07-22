@@ -54,6 +54,7 @@ SENSOR_TYPES = {
         CONF_NAME: "DHW Circulation Pump Active",
         CONF_DEVICE_CLASS: DEVICE_CLASS_POWER,
         CONF_GETTER: lambda api: api.getDomesticHotWaterCirculationPumpActive(),
+    },
     # gas sensors
     SENSOR_BURNER_ACTIVE: {
         CONF_NAME: "Burner active",
