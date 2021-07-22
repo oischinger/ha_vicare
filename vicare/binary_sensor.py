@@ -25,6 +25,7 @@ CONF_GETTER = "getter"
 
 SENSOR_CIRCULATION_PUMP_ACTIVE = "circulationpump_active"
 SENSOR_FROST_PROTECTION_ACTIVE = "frost_protection_active"
+SENSOR_DHW_CIRCULATION_PUMP_ACTIVE = "dhw_circulation_pump_active"
 
 # gas sensors
 SENSOR_BURNER_ACTIVE = "burner_active"
@@ -49,6 +50,10 @@ SENSOR_TYPES = {
         CONF_DEVICE_CLASS: DEVICE_CLASS_POWER,
         CONF_GETTER: lambda api: api.getFrostProtectionActive(),
     },
+    SENSOR_DHW_CIRCULATION_PUMP_ACTIVE: {
+        CONF_NAME: "DHW Circulation Pump Active",
+        CONF_DEVICE_CLASS: DEVICE_CLASS_POWER,
+        CONF_GETTER: lambda api: api.getDomesticHotWaterCirculationPumpActive(),
     # gas sensors
     SENSOR_BURNER_ACTIVE: {
         CONF_NAME: "Burner active",
@@ -93,7 +98,7 @@ SENSOR_TYPES = {
     },
 }
 
-SENSORS_GENERIC = [SENSOR_CIRCULATION_PUMP_ACTIVE, SENSOR_FROST_PROTECTION_ACTIVE]
+SENSORS_GENERIC = [SENSOR_CIRCULATION_PUMP_ACTIVE, SENSOR_FROST_PROTECTION_ACTIVE, SENSOR_DHW_CIRCULATION_PUMP_ACTIVE]
 
 SENSORS_BY_HEATINGTYPE = {
     HeatingType.gas: [
