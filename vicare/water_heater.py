@@ -1,4 +1,5 @@
 """Viessmann ViCare water_heater device."""
+from contextlib import suppress
 import logging
 
 from PyViCare.PyViCare import PyViCareNotSupportedFeatureError, PyViCareRateLimitError
@@ -10,7 +11,7 @@ from homeassistant.components.water_heater import (
 )
 from homeassistant.const import ATTR_TEMPERATURE, PRECISION_WHOLE, TEMP_CELSIUS
 
-from . import DOMAIN as VICARE_DOMAIN, VICARE_API, VICARE_HEATING_TYPE, VICARE_NAME, catchNotSupported
+from . import DOMAIN as VICARE_DOMAIN, VICARE_API, VICARE_HEATING_TYPE, VICARE_NAME
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -76,19 +77,23 @@ class ViCareWater(WaterHeaterEntity):
     def update(self):
         """Let HA know there has been an update from the ViCare API."""
         try:
-            with catchNotSupported() as self._current_temperature:
-                self._current_temperature = self._api.getDomesticHotWaterStorageTemperature()
+            with suppress(PyViCareNotSupportedFeatureError):
+                self._current_temperature = (
+                    self._api.getDomesticHotWaterStorageTemperature()
+                )
 
-            with catchNotSupported() as self._target_temperature:
-                self._target_temperature = self._api.getDomesticHotWaterConfiguredTemperature()
+            with suppress(PyViCareNotSupportedFeatureError):
+                self._target_temperature = (
+                    self._api.getDomesticHotWaterConfiguredTemperature()
+                )
 
-            with catchNotSupported() as self._current_mode:
+            with suppress(PyViCareNotSupportedFeatureError):
                 self._current_mode = self._api.getActiveMode()
 
         except requests.exceptions.ConnectionError:
             _LOGGER.error("Unable to retrieve data from ViCare server")
-        except PyViCareRateLimitError as e:
-            _LOGGER.error("Vicare API rate limit exceeded" + str(e))
+        except PyViCareRateLimitError as limit_exception:
+            _LOGGER.error("Vicare API rate limit exceeded: %s", limit_exception)
         except ValueError:
             _LOGGER.error("Unable to decode data from ViCare server")
 

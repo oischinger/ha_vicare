@@ -1,4 +1,5 @@
 """Viessmann ViCare sensor device."""
+from contextlib import suppress
 import logging
 
 from PyViCare.PyViCare import PyViCareNotSupportedFeatureError, PyViCareRateLimitError
@@ -26,7 +27,6 @@ from . import (
     VICARE_HEATING_TYPE,
     VICARE_NAME,
     HeatingType,
-    catchNotSupported
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -386,11 +386,11 @@ class ViCareSensor(SensorEntity):
     def update(self):
         """Update state of sensor."""
         try:
-            with catchNotSupported() as self._state:
+            with suppress(PyViCareNotSupportedFeatureError):
                 self._state = self._sensor[CONF_GETTER](self._api)
         except requests.exceptions.ConnectionError:
             _LOGGER.error("Unable to retrieve data from ViCare server")
         except ValueError:
             _LOGGER.error("Unable to decode data from ViCare server")
-        except PyViCareRateLimitError as e:
-            _LOGGER.error("Vicare API rate limit exceeded" + str(e))
+        except PyViCareRateLimitError as limit_exception:
+            _LOGGER.error("Vicare API rate limit exceeded: %s", limit_exception)
