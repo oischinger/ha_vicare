@@ -1,9 +1,7 @@
 """The ViCare integration."""
 import enum
 import logging
-from contextlib import contextmanager
 
-from PyViCare.PyViCare import PyViCareNotSupportedFeatureError, PyViCareRateLimitError
 from PyViCare.PyViCareDevice import Device
 from PyViCare.PyViCareFuelCell import FuelCell
 from PyViCare.PyViCareGazBoiler import GazBoiler
@@ -43,12 +41,6 @@ class HeatingType(enum.Enum):
     heatpump = "heatpump"
     fuelcell = "fuelcell"
 
-@contextmanager
-def catchNotSupported():
-    try:
-        yield None
-    except PyViCareNotSupportedFeatureError:
-        pass
 
 CONFIG_SCHEMA = vol.Schema(
     {
