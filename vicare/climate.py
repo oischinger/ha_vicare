@@ -21,13 +21,8 @@ from homeassistant.components.climate.const import (
 from homeassistant.const import ATTR_TEMPERATURE, PRECISION_WHOLE, TEMP_CELSIUS
 from homeassistant.helpers import entity_platform
 
-from . import (
-    DOMAIN as VICARE_DOMAIN,
-    VICARE_API,
-    VICARE_HEATING_TYPE,
-    VICARE_NAME,
-    HeatingType,
-)
+from . import VICARE_API, VICARE_NAME
+from .const import CONF_HEATING_TYPE, DOMAIN, HeatingType
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -93,12 +88,12 @@ async def async_setup_platform(
     """Create the ViCare climate devices."""
     if discovery_info is None:
         return
-    vicare_api = hass.data[VICARE_DOMAIN][VICARE_API]
-    heating_type = hass.data[VICARE_DOMAIN][VICARE_HEATING_TYPE]
+    vicare_api = hass.data[DOMAIN][VICARE_API]
+    heating_type = hass.data[DOMAIN][CONF_HEATING_TYPE]
     async_add_entities(
         [
             ViCareClimate(
-                f"{hass.data[VICARE_DOMAIN][VICARE_NAME]} Heating",
+                f"{hass.data[DOMAIN][VICARE_NAME]} Heating",
                 vicare_api,
                 heating_type,
             )

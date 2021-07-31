@@ -1,5 +1,4 @@
 """The ViCare integration."""
-import enum
 import logging
 
 from PyViCare.PyViCareDevice import Device
@@ -8,6 +7,7 @@ from PyViCare.PyViCareGazBoiler import GazBoiler
 from PyViCare.PyViCareHeatPump import HeatPump
 import voluptuous as vol
 
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
     CONF_CLIENT_ID,
     CONF_NAME,
@@ -15,31 +15,26 @@ from homeassistant.const import (
     CONF_SCAN_INTERVAL,
     CONF_USERNAME,
 )
+from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers import discovery
 import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.storage import STORAGE_DIR
+
+from .const import (
+    CONF_CIRCUIT,
+    CONF_HEATING_TYPE,
+    DEFAULT_HEATING_TYPE,
+    DOMAIN,
+    HeatingType,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
 PLATFORMS = ["climate", "sensor", "binary_sensor", "water_heater"]
 
-DOMAIN = "vicare"
 VICARE_API = "api"
 VICARE_NAME = "name"
-VICARE_HEATING_TYPE = "heating_type"
-
-CONF_CIRCUIT = "circuit"
-CONF_HEATING_TYPE = "heating_type"
-DEFAULT_HEATING_TYPE = "generic"
-
-
-class HeatingType(enum.Enum):
-    """Possible options for heating type."""
-
-    generic = "generic"
-    gas = "gas"
-    heatpump = "heatpump"
-    fuelcell = "fuelcell"
 
 
 CONFIG_SCHEMA = vol.Schema(
@@ -66,6 +61,10 @@ CONFIG_SCHEMA = vol.Schema(
 
 def setup(hass, config):
     """Create the ViCare component."""
+    if config.get(DOMAIN) is None:
+        # Setup via UI. No need to continue yaml-based setup
+        return True
+
     conf = config[DOMAIN]
     params = {"token_file": hass.config.path(STORAGE_DIR, "vicare_token.save")}
     if conf.get(CONF_CIRCUIT) is not None:
@@ -93,9 +92,63 @@ def setup(hass, config):
     hass.data[DOMAIN] = {}
     hass.data[DOMAIN][VICARE_API] = vicare_api
     hass.data[DOMAIN][VICARE_NAME] = conf[CONF_NAME]
-    hass.data[DOMAIN][VICARE_HEATING_TYPE] = heating_type
+    hass.data[DOMAIN][CONF_HEATING_TYPE] = heating_type
 
     for platform in PLATFORMS:
         discovery.load_platform(hass, platform, DOMAIN, {}, config)
 
     return True
+
+
+async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """Set up from config entry."""
+    _LOGGER.debug("Setting up ViCare component")
+
+    params = {"token_file": hass.config.path(STORAGE_DIR, "vicare_token.save")}
+    if entry.data.get(CONF_CIRCUIT) is not None:
+        params["circuit"] = entry.data[CONF_CIRCUIT]
+
+    params["cacheDuration"] = entry.data.get(CONF_SCAN_INTERVAL)
+    params["client_id"] = entry.data.get(CONF_CLIENT_ID)
+
+    hass.data[DOMAIN] = {}
+    hass.data[DOMAIN][VICARE_NAME] = entry.data[CONF_NAME]
+    if entry.data.get(CONF_HEATING_TYPE) is not None:
+        hass.data[DOMAIN][CONF_HEATING_TYPE] = HeatingType[
+            entry.data[CONF_HEATING_TYPE]
+        ]
+    else:
+        hass.data[DOMAIN][CONF_HEATING_TYPE] = DEFAULT_HEATING_TYPE
+
+    await hass.async_add_executor_job(setup_vicare_api, hass, entry, params)
+
+    for platform in PLATFORMS:
+        discovery.load_platform(hass, platform, DOMAIN, {}, entry.data)
+
+    # await async_setup_services(hass)
+
+    return True
+
+
+def setup_vicare_api(hass, entry, params):
+    heating_type = hass.data[DOMAIN][CONF_HEATING_TYPE]
+    try:
+        if heating_type == HeatingType.gas:
+            vicare_api = GazBoiler(
+                entry.data[CONF_USERNAME], entry.data[CONF_PASSWORD], **params
+            )
+        elif heating_type == HeatingType.heatpump:
+            vicare_api = HeatPump(
+                entry.data[CONF_USERNAME], entry.data[CONF_PASSWORD], **params
+            )
+        elif heating_type == HeatingType.fuelcell:
+            vicare_api = FuelCell(
+                entry.data[CONF_USERNAME], entry.data[CONF_PASSWORD], **params
+            )
+        else:
+            vicare_api = Device(
+                entry.data[CONF_USERNAME], entry.data[CONF_PASSWORD], **params
+            )
+    except AttributeError as ex:
+        raise ConfigEntryAuthFailed from ex
+    hass.data[DOMAIN][VICARE_API] = vicare_api

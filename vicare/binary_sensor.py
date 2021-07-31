@@ -11,13 +11,8 @@ from homeassistant.components.binary_sensor import (
 )
 from homeassistant.const import CONF_DEVICE_CLASS, CONF_NAME
 
-from . import (
-    DOMAIN as VICARE_DOMAIN,
-    VICARE_API,
-    VICARE_HEATING_TYPE,
-    VICARE_NAME,
-    HeatingType,
-)
+from . import VICARE_API, VICARE_NAME
+from .const import CONF_HEATING_TYPE, DOMAIN, HeatingType
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -67,8 +62,8 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
     if discovery_info is None:
         return
 
-    vicare_api = hass.data[VICARE_DOMAIN][VICARE_API]
-    heating_type = hass.data[VICARE_DOMAIN][VICARE_HEATING_TYPE]
+    vicare_api = hass.data[DOMAIN][VICARE_API]
+    heating_type = hass.data[DOMAIN][CONF_HEATING_TYPE]
 
     sensors = SENSORS_GENERIC.copy()
 
@@ -77,9 +72,7 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
 
     add_entities(
         [
-            ViCareBinarySensor(
-                hass.data[VICARE_DOMAIN][VICARE_NAME], vicare_api, sensor
-            )
+            ViCareBinarySensor(hass.data[DOMAIN][VICARE_NAME], vicare_api, sensor)
             for sensor in sensors
         ]
     )

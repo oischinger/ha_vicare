@@ -11,7 +11,8 @@ from homeassistant.components.water_heater import (
 )
 from homeassistant.const import ATTR_TEMPERATURE, PRECISION_WHOLE, TEMP_CELSIUS
 
-from . import DOMAIN as VICARE_DOMAIN, VICARE_API, VICARE_HEATING_TYPE, VICARE_NAME
+from . import VICARE_API, VICARE_NAME
+from .const import CONF_HEATING_TYPE, DOMAIN, HeatingType
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -47,12 +48,12 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
     """Create the ViCare water_heater devices."""
     if discovery_info is None:
         return
-    vicare_api = hass.data[VICARE_DOMAIN][VICARE_API]
-    heating_type = hass.data[VICARE_DOMAIN][VICARE_HEATING_TYPE]
+    vicare_api = hass.data[DOMAIN][VICARE_API]
+    heating_type = hass.data[DOMAIN][CONF_HEATING_TYPE]
     add_entities(
         [
             ViCareWater(
-                f"{hass.data[VICARE_DOMAIN][VICARE_NAME]} Water",
+                f"{hass.data[DOMAIN][VICARE_NAME]} Water",
                 vicare_api,
                 heating_type,
             )
