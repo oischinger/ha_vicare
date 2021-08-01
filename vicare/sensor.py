@@ -2,7 +2,7 @@
 from contextlib import suppress
 import logging
 
-from PyViCare.PyViCare import PyViCareNotSupportedFeatureError, PyViCareRateLimitError
+from PyViCare.PyViCareUtils import PyViCareNotSupportedFeatureError, PyViCareRateLimitError
 import requests
 
 from homeassistant.components.sensor import SensorEntity
@@ -371,7 +371,8 @@ class ViCareSensor(SensorEntity):
         """Initialize the sensor."""
         self._sensor = SENSOR_TYPES[sensor_type]
         self._name = name
-        self._api = api
+        self._api = api.asGazBoiler()
+        self._device_config = api
         self._sensor_type = sensor_type
         self._state = None
 
@@ -391,8 +392,8 @@ class ViCareSensor(SensorEntity):
 
     @property
     def unique_id(self):
-        """Return a unique ID."""
-        return f"{self._api.service.id}-{self._sensor_type}"
+        """Return unique ID for this device."""
+        return f"{self._device_config.getModel()}-{self._name}"
 
     @property
     def name(self):

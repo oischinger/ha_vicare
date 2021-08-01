@@ -2,7 +2,7 @@
 from contextlib import suppress
 import logging
 
-from PyViCare.PyViCare import PyViCareNotSupportedFeatureError, PyViCareRateLimitError
+from PyViCare.PyViCareUtils import PyViCareNotSupportedFeatureError, PyViCareRateLimitError
 import requests
 
 from homeassistant.components.water_heater import (
@@ -89,7 +89,8 @@ class ViCareWater(WaterHeaterEntity):
         """Initialize the DHW water_heater device."""
         self._name = name
         self._state = None
-        self._api = api
+        self._api = api.asGazBoiler()
+        self._device_config = api
         self._attributes = {}
         self._target_temperature = None
         self._current_temperature = None
@@ -122,7 +123,7 @@ class ViCareWater(WaterHeaterEntity):
     @property
     def unique_id(self):
         """Return unique ID for this device."""
-        return self._name
+        return f"{self._device_config.getModel()}-{self._name}"
 
     @property
     def device_info(self):
