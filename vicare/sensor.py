@@ -311,13 +311,43 @@ SENSORS_BY_HEATINGTYPE = {
 }
 
 
+def _build_entity(name, vicare_api, sensor):
+    _LOGGER.debug("Found device %s", name)
+    return ViCareSensor(
+        name,
+        vicare_api,
+        sensor,
+    )
+
+
+async def async_setup_entry(hass, config_entry, async_add_devices):
+    """Create the ViCare sensor devices."""
+    vicare_api = hass.data[DOMAIN][VICARE_API]
+    heating_type = hass.data[DOMAIN][CONF_HEATING_TYPE]
+    name = hass.data[DOMAIN][VICARE_NAME]
+
+    sensors = SENSORS_GENERIC.copy()
+
+    if heating_type != HeatingType.generic:
+        sensors.extend(SENSORS_BY_HEATINGTYPE[heating_type])
+
+    all_devices = [
+        _build_entity(f"{name} {SENSOR_TYPES[sensor][CONF_NAME]}", vicare_api, sensor)
+        for sensor in sensors
+    ]
+
+    async_add_devices(all_devices)
+
+
 def setup_platform(hass, config, add_entities, discovery_info=None):
     """Create the ViCare sensor devices."""
+    # Legacy setup. Remove after configuration.yaml deprecation end
     if discovery_info is None:
         return
 
     vicare_api = hass.data[DOMAIN][VICARE_API]
     heating_type = hass.data[DOMAIN][CONF_HEATING_TYPE]
+    name = hass.data[DOMAIN][VICARE_NAME]
 
     sensors = SENSORS_GENERIC.copy()
 
@@ -326,7 +356,9 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
 
     add_entities(
         [
-            ViCareSensor(hass.data[DOMAIN][VICARE_NAME], vicare_api, sensor)
+            ViCareSensor(
+                f"{name} {SENSOR_TYPES[sensor][CONF_NAME]}", vicare_api, sensor
+            )
             for sensor in sensors
         ]
     )
@@ -338,10 +370,19 @@ class ViCareSensor(SensorEntity):
     def __init__(self, name, api, sensor_type):
         """Initialize the sensor."""
         self._sensor = SENSOR_TYPES[sensor_type]
-        self._name = f"{name} {self._sensor[CONF_NAME]}"
+        self._name = name
         self._api = api
         self._sensor_type = sensor_type
         self._state = None
+
+    @property
+    def device_info(self):
+        """Return device info for this device."""
+        return {
+            "identifiers": {(DOMAIN, self._name)},
+            "name": self.name,
+            "manufacturer": "Viessmann",
+        }
 
     @property
     def available(self):

@@ -1,11 +1,12 @@
 """Config flow for ViCare integration."""
 from __future__ import annotations
 
-from typing import Any, Dict, Optional
+from typing import Any
 
 import voluptuous as vol
 
 from homeassistant import config_entries
+from homeassistant.components.dhcp import MAC_ADDRESS
 from homeassistant.const import (
     CONF_CLIENT_ID,
     CONF_NAME,
@@ -13,7 +14,6 @@ from homeassistant.const import (
     CONF_SCAN_INTERVAL,
     CONF_USERNAME,
 )
-from homeassistant.data_entry_flow import FlowResult
 import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.device_registry import format_mac
 
@@ -23,7 +23,6 @@ from .const import (
     DEFAULT_HEATING_TYPE,
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
-    HeatingType,
 )
 
 
@@ -62,10 +61,9 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def async_step_dhcp(self, discovery_info):
         """Invoke when a Viessmann MAC address is discovered on the network."""
-        # TODO: Should MAC be a unique ID? Maybe required to ignore discovery popups by HA
-        # formatted_mac = format_mac(discovery_info[MAC_ADDRESS])
+        formatted_mac = format_mac(discovery_info[MAC_ADDRESS])
 
-        # await self.async_set_unique_id(format_mac(formatted_mac))
-        # self._abort_if_unique_id_configured()
+        await self.async_set_unique_id(format_mac(formatted_mac))
+        self._abort_if_unique_id_configured()
 
         return await self.async_step_user()

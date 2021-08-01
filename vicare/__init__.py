@@ -108,8 +108,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if entry.data.get(CONF_CIRCUIT) is not None:
         params["circuit"] = entry.data[CONF_CIRCUIT]
 
-    params["cacheDuration"] = entry.data.get(CONF_SCAN_INTERVAL)
-    params["client_id"] = entry.data.get(CONF_CLIENT_ID)
+    params["cacheDuration"] = entry.data[CONF_SCAN_INTERVAL]
+    params["client_id"] = entry.data[CONF_CLIENT_ID]
 
     hass.data[DOMAIN] = {}
     hass.data[DOMAIN][VICARE_NAME] = entry.data[CONF_NAME]
@@ -120,17 +120,22 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     else:
         hass.data[DOMAIN][CONF_HEATING_TYPE] = DEFAULT_HEATING_TYPE
 
+    # For previous config entries where unique_id is None
+    if entry.unique_id is None:
+        hass.config_entries.async_update_entry(
+            entry, unique_id=entry.data[CONF_USERNAME]
+        )
+
     await hass.async_add_executor_job(setup_vicare_api, hass, entry, params)
 
-    for platform in PLATFORMS:
-        discovery.load_platform(hass, platform, DOMAIN, {}, entry.data)
-
-    # await async_setup_services(hass)
+    hass.config_entries.async_setup_platforms(entry, PLATFORMS)
+    # TODO: await async_setup_services(hass)
 
     return True
 
 
 def setup_vicare_api(hass, entry, params):
+    """Set up PyVicare API."""
     heating_type = hass.data[DOMAIN][CONF_HEATING_TYPE]
     try:
         if heating_type == HeatingType.gas:

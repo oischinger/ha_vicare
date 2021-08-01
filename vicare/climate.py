@@ -82,10 +82,43 @@ HA_TO_VICARE_PRESET_HEATING = {
 }
 
 
+def _build_entity(name, vicare_api, heating_type):
+    _LOGGER.debug("Found device %s", name)
+    return ViCareClimate(
+        name,
+        vicare_api,
+        heating_type,
+    )
+
+
+async def async_setup_entry(hass, config_entry, async_add_devices):
+    """Set up the ViCare climate platform."""
+    vicare_api = hass.data[DOMAIN][VICARE_API]
+    heating_type = hass.data[DOMAIN][CONF_HEATING_TYPE]
+    name = hass.data[DOMAIN][VICARE_NAME]
+
+    all_devices = [_build_entity(f"{name} Heating", vicare_api, heating_type)]
+
+    platform = entity_platform.async_get_current_platform()
+
+    platform.async_register_entity_service(
+        SERVICE_SET_VICARE_MODE,
+        {
+            vol.Required(SERVICE_SET_VICARE_MODE_ATTR_MODE): vol.In(
+                VICARE_TO_HA_HVAC_HEATING
+            )
+        },
+        "set_vicare_mode",
+    )
+
+    async_add_devices(all_devices)
+
+
 async def async_setup_platform(
     hass, hass_config, async_add_entities, discovery_info=None
 ):
     """Create the ViCare climate devices."""
+    # Legacy setup. Remove after configuration.yaml deprecation end
     if discovery_info is None:
         return
     vicare_api = hass.data[DOMAIN][VICARE_API]
@@ -128,6 +161,20 @@ class ViCareClimate(ClimateEntity):
         self._current_program = None
         self._heating_type = heating_type
         self._current_action = None
+
+    @property
+    def unique_id(self):
+        """Return unique ID for this device."""
+        return self._name
+
+    @property
+    def device_info(self):
+        """Return device info for this device."""
+        return {
+            "identifiers": {(DOMAIN, self._name)},
+            "name": self.name,
+            "manufacturer": "Viessmann",
+        }
 
     def update(self):
         """Let HA know there has been an update from the ViCare API."""

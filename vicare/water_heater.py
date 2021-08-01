@@ -12,7 +12,7 @@ from homeassistant.components.water_heater import (
 from homeassistant.const import ATTR_TEMPERATURE, PRECISION_WHOLE, TEMP_CELSIUS
 
 from . import VICARE_API, VICARE_NAME
-from .const import CONF_HEATING_TYPE, DOMAIN, HeatingType
+from .const import CONF_HEATING_TYPE, DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -44,8 +44,29 @@ HA_TO_VICARE_HVAC_DHW = {
 }
 
 
+def _build_entity(name, vicare_api, heating_type):
+    _LOGGER.debug("Found device %s", name)
+    return ViCareWater(
+        name,
+        vicare_api,
+        heating_type,
+    )
+
+
+async def async_setup_entry(hass, config_entry, async_add_devices):
+    """Set up the ViCare climate platform."""
+    vicare_api = hass.data[DOMAIN][VICARE_API]
+    heating_type = hass.data[DOMAIN][CONF_HEATING_TYPE]
+    name = hass.data[DOMAIN][VICARE_NAME]
+
+    all_devices = [_build_entity(f"{name} Water", vicare_api, heating_type)]
+
+    async_add_devices(all_devices)
+
+
 def setup_platform(hass, config, add_entities, discovery_info=None):
     """Create the ViCare water_heater devices."""
+    # Legacy setup. Remove after configuration.yaml deprecation end
     if discovery_info is None:
         return
     vicare_api = hass.data[DOMAIN][VICARE_API]
@@ -97,6 +118,20 @@ class ViCareWater(WaterHeaterEntity):
             _LOGGER.error("Vicare API rate limit exceeded: %s", limit_exception)
         except ValueError:
             _LOGGER.error("Unable to decode data from ViCare server")
+
+    @property
+    def unique_id(self):
+        """Return unique ID for this device."""
+        return self._name
+
+    @property
+    def device_info(self):
+        """Return device info for this device."""
+        return {
+            "identifiers": {(DOMAIN, self._name)},
+            "name": self.name,
+            "manufacturer": "Viessmann",
+        }
 
     @property
     def supported_features(self):
