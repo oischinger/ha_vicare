@@ -6,5 +6,10 @@
   "requirements": ["PyViCare==1.0.0"],
   "iot_class": "cloud_polling",
   "config_flow": true,
-  "version": "1.0.0"
+  "version": "1.0.0",
+  "dhcp": [
+    {
+      "macaddress": "B87424*"
+    }
+  ]
 }
