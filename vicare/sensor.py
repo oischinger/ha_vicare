@@ -380,9 +380,10 @@ class ViCareSensor(SensorEntity):
     def device_info(self):
         """Return device info for this device."""
         return {
-            "identifiers": {(DOMAIN, self._name)},
-            "name": self.name,
+            "identifiers": {(DOMAIN, self._device_config.getConfig().serial)},
+            "name": self._device_config.getModel(),
             "manufacturer": "Viessmann",
+            "model": (DOMAIN, self._device_config.getModel()),
         }
 
     @property
@@ -393,7 +394,7 @@ class ViCareSensor(SensorEntity):
     @property
     def unique_id(self):
         """Return unique ID for this device."""
-        return f"{self._device_config.getModel()}-{self._name}"
+        return f"{self._device_config.getConfig().serial}-{self._name}"
 
     @property
     def name(self):
