@@ -22,15 +22,14 @@ from .const import (
     CONF_HEATING_TYPE,
     DEFAULT_HEATING_TYPE,
     DOMAIN,
+    PLATFORMS,
+    VICARE_API,
+    VICARE_DEVICE_CONFIG,
+    VICARE_NAME,
     HeatingType,
 )
 
 _LOGGER = logging.getLogger(__name__)
-
-PLATFORMS = ["climate", "sensor", "binary_sensor", "water_heater"]
-
-VICARE_API = "api"
-VICARE_NAME = "name"
 
 
 CONFIG_SCHEMA = vol.Schema(
@@ -106,9 +105,30 @@ def setup_vicare_api(hass, conf):
     """Set up PyVicare API."""
     vicare_api = PyViCare()
     vicare_api.setCacheDuration(conf[CONF_SCAN_INTERVAL])
-    vicare_api.initWithCredentials(conf[CONF_USERNAME], conf[CONF_PASSWORD], conf[CONF_CLIENT_ID], hass.config.path(STORAGE_DIR, "vicare_token.save"))
-    
+    vicare_api.initWithCredentials(
+        conf[CONF_USERNAME],
+        conf[CONF_PASSWORD],
+        conf[CONF_CLIENT_ID],
+        hass.config.path(STORAGE_DIR, "vicare_token.save"),
+    )
+
     device = vicare_api.devices[0]
     for device in vicare_api.devices:
-        _LOGGER.info("Found device: %s (online: %s)", device.getModel(), str(device.isOnline()))
-    hass.data[DOMAIN][VICARE_API] = device
+        _LOGGER.info(
+            "Found device: %s (online: %s)", device.getModel(), str(device.isOnline())
+        )
+    hass.data[DOMAIN][VICARE_DEVICE_CONFIG] = device
+
+    device_types = [
+        (device.asAutoDetectDevice, HeatingType.auto),
+        (device.asGazBoiler, HeatingType.gas),
+        (device.asFuelCell, HeatingType.fuelcell),
+        (device.asHeatPump, HeatingType.heatpump),
+        (device.asOilBoiler, HeatingType.oil),
+        (device.asPelletsBoiler, HeatingType.pellets),
+    ]
+
+    for (creator_method, heating_type) in device_types:
+        if heating_type == hass.data[DOMAIN][CONF_HEATING_TYPE]:
+            _LOGGER.info("Using creator_method %s", creator_method.__name__)
+            hass.data[DOMAIN][VICARE_API] = creator_method()

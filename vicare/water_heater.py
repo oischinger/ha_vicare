@@ -2,7 +2,10 @@
 from contextlib import suppress
 import logging
 
-from PyViCare.PyViCareUtils import PyViCareNotSupportedFeatureError, PyViCareRateLimitError
+from PyViCare.PyViCareUtils import (
+    PyViCareNotSupportedFeatureError,
+    PyViCareRateLimitError,
+)
 import requests
 
 from homeassistant.components.water_heater import (
@@ -11,8 +14,13 @@ from homeassistant.components.water_heater import (
 )
 from homeassistant.const import ATTR_TEMPERATURE, PRECISION_WHOLE, TEMP_CELSIUS
 
-from . import VICARE_API, VICARE_NAME
-from .const import CONF_HEATING_TYPE, DOMAIN
+from .const import (
+    CONF_HEATING_TYPE,
+    DOMAIN,
+    VICARE_API,
+    VICARE_DEVICE_CONFIG,
+    VICARE_NAME,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -44,39 +52,47 @@ HA_TO_VICARE_HVAC_DHW = {
 }
 
 
-def _build_entity(name, vicare_api, heating_type):
+def _build_entity(name, vicare_api, device_config, heating_type):
     _LOGGER.debug("Found device %s", name)
     return ViCareWater(
         name,
         vicare_api,
+        device_config,
         heating_type,
     )
 
 
 async def async_setup_entry(hass, config_entry, async_add_devices):
     """Set up the ViCare climate platform."""
-    vicare_api = hass.data[DOMAIN][VICARE_API]
-    heating_type = hass.data[DOMAIN][CONF_HEATING_TYPE]
     name = hass.data[DOMAIN][VICARE_NAME]
 
-    all_devices = [_build_entity(f"{name} Water", vicare_api, heating_type)]
+    all_devices = [
+        _build_entity(
+            f"{name} Water",
+            hass.data[DOMAIN][VICARE_API],
+            hass.data[DOMAIN][VICARE_DEVICE_CONFIG],
+            hass.data[DOMAIN][CONF_HEATING_TYPE],
+        )
+    ]
 
     async_add_devices(all_devices)
 
 
-def setup_platform(hass, config, add_entities, discovery_info=None):
+async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
     """Create the ViCare water_heater devices."""
     # Legacy setup. Remove after configuration.yaml deprecation end
     if discovery_info is None:
         return
-    vicare_api = hass.data[DOMAIN][VICARE_API]
-    heating_type = hass.data[DOMAIN][CONF_HEATING_TYPE]
-    add_entities(
+    
+    name = hass.data[DOMAIN][VICARE_NAME]
+
+    async_add_entities(
         [
-            ViCareWater(
-                f"{hass.data[DOMAIN][VICARE_NAME]} Water",
-                vicare_api,
-                heating_type,
+            _build_entity(
+                f"{name} Water",
+                hass.data[DOMAIN][VICARE_API],
+                hass.data[DOMAIN][VICARE_DEVICE_CONFIG],
+                hass.data[DOMAIN][CONF_HEATING_TYPE],
             )
         ]
     )
@@ -85,12 +101,12 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
 class ViCareWater(WaterHeaterEntity):
     """Representation of the ViCare domestic hot water device."""
 
-    def __init__(self, name, api, heating_type):
+    def __init__(self, name, api, device_config, heating_type):
         """Initialize the DHW water_heater device."""
         self._name = name
         self._state = None
-        self._api = api.asGazBoiler()
-        self._device_config = api
+        self._api = api
+        self._device_config = device_config
         self._attributes = {}
         self._target_temperature = None
         self._current_temperature = None

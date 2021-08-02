@@ -2,7 +2,10 @@
 from contextlib import suppress
 import logging
 
-from PyViCare.PyViCareUtils import PyViCareNotSupportedFeatureError, PyViCareRateLimitError
+from PyViCare.PyViCareUtils import (
+    PyViCareNotSupportedFeatureError,
+    PyViCareRateLimitError,
+)
 import requests
 
 from homeassistant.components.binary_sensor import (
@@ -11,8 +14,14 @@ from homeassistant.components.binary_sensor import (
 )
 from homeassistant.const import CONF_DEVICE_CLASS, CONF_NAME
 
-from . import VICARE_API, VICARE_NAME
-from .const import CONF_HEATING_TYPE, DOMAIN, HeatingType
+from .const import (
+    CONF_HEATING_TYPE,
+    DOMAIN,
+    VICARE_API,
+    VICARE_DEVICE_CONFIG,
+    VICARE_NAME,
+    HeatingType,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -57,28 +66,33 @@ SENSORS_BY_HEATINGTYPE = {
 }
 
 
-def _build_entity(name, vicare_api, sensor):
+def _build_entity(name, vicare_api, device_config, sensor):
     _LOGGER.debug("Found device %s", name)
     return ViCareBinarySensor(
         name,
         vicare_api,
+        device_config,
         sensor,
     )
 
 
 async def async_setup_entry(hass, config_entry, async_add_devices):
     """Create the ViCare binary sensor devices."""
-    vicare_api = hass.data[DOMAIN][VICARE_API]
     heating_type = hass.data[DOMAIN][CONF_HEATING_TYPE]
     name = hass.data[DOMAIN][VICARE_NAME]
 
     sensors = SENSORS_GENERIC.copy()
 
-    if heating_type != HeatingType.generic:
+    if heating_type != HeatingType.auto:
         sensors.extend(SENSORS_BY_HEATINGTYPE[heating_type])
 
     all_devices = [
-        _build_entity(f"{name} {SENSOR_TYPES[sensor][CONF_NAME]}", vicare_api, sensor)
+        _build_entity(
+            f"{name} {SENSOR_TYPES[sensor][CONF_NAME]}",
+            hass.data[DOMAIN][VICARE_API],
+            hass.data[DOMAIN][VICARE_DEVICE_CONFIG],
+            sensor,
+        )
         for sensor in sensors
     ]
 
@@ -91,19 +105,21 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
     if discovery_info is None:
         return
 
-    vicare_api = hass.data[DOMAIN][VICARE_API]
     heating_type = hass.data[DOMAIN][CONF_HEATING_TYPE]
     name = hass.data[DOMAIN][VICARE_NAME]
 
     sensors = SENSORS_GENERIC.copy()
 
-    if heating_type != HeatingType.generic:
+    if heating_type != HeatingType.auto:
         sensors.extend(SENSORS_BY_HEATINGTYPE[heating_type])
 
     add_entities(
         [
-            ViCareBinarySensor(
-                f"{name} {SENSOR_TYPES[sensor][CONF_NAME]}", vicare_api, sensor
+            _build_entity(
+                f"{name} {SENSOR_TYPES[sensor][CONF_NAME]}",
+                hass.data[DOMAIN][VICARE_API],
+                hass.data[DOMAIN][VICARE_DEVICE_CONFIG],
+                sensor,
             )
             for sensor in sensors
         ]
@@ -113,12 +129,12 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
 class ViCareBinarySensor(BinarySensorEntity):
     """Representation of a ViCare sensor."""
 
-    def __init__(self, name, api, sensor_type):
+    def __init__(self, name, api, device_config, sensor_type):
         """Initialize the sensor."""
         self._sensor = SENSOR_TYPES[sensor_type]
         self._name = name
-        self._api = api.asGazBoiler()
-        self._device_config = api
+        self._api = api
+        self._device_config = device_config
         self._sensor_type = sensor_type
         self._state = None
 
