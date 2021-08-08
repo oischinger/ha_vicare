@@ -28,6 +28,7 @@ from .const import (
     CONF_HEATING_TYPE,
     DOMAIN,
     VICARE_API,
+    VICARE_CIRCUITS,
     VICARE_DEVICE_CONFIG,
     VICARE_NAME,
     HeatingType,
@@ -332,8 +333,8 @@ def _build_entity(name, vicare_api, device_config, sensor):
 
 async def async_setup_entry(hass, config_entry, async_add_devices):
     """Create the ViCare sensor devices."""
-    heating_type = hass.data[DOMAIN][CONF_HEATING_TYPE]
-    name = hass.data[DOMAIN][VICARE_NAME]
+    heating_type = hass.data[DOMAIN][config_entry.entry_id][CONF_HEATING_TYPE]
+    name = hass.data[DOMAIN][config_entry.entry_id][VICARE_NAME]
 
     sensors = SENSORS_GENERIC.copy()
 
@@ -343,8 +344,8 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
     all_devices = [
         _build_entity(
             f"{name} {SENSOR_TYPES[sensor][CONF_NAME]}",
-            hass.data[DOMAIN][VICARE_API],
-            hass.data[DOMAIN][VICARE_DEVICE_CONFIG],
+            hass.data[DOMAIN][config_entry.entry_id][VICARE_API],
+            hass.data[DOMAIN][config_entry.entry_id][VICARE_DEVICE_CONFIG],
             sensor,
         )
         for sensor in sensors

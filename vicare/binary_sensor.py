@@ -15,9 +15,9 @@ from homeassistant.components.binary_sensor import (
 from homeassistant.const import CONF_DEVICE_CLASS, CONF_NAME
 
 from .const import (
-    CONF_HEATING_TYPE,
     DOMAIN,
     VICARE_API,
+    VICARE_CIRCUITS,
     VICARE_DEVICE_CONFIG,
     VICARE_NAME,
     HeatingType,
@@ -27,43 +27,45 @@ _LOGGER = logging.getLogger(__name__)
 
 CONF_GETTER = "getter"
 
-SENSOR_CIRCULATION_PUMP_ACTIVE = "circulationpump_active"
-
-# gas sensors
-SENSOR_BURNER_ACTIVE = "burner_active"
-
-# heatpump sensors
-SENSOR_COMPRESSOR_ACTIVE = "compressor_active"
-
-SENSOR_TYPES = {
-    SENSOR_CIRCULATION_PUMP_ACTIVE: {
+GLOBAL_SENSORS = [
+    {
         CONF_NAME: "Circulation pump active",
         CONF_DEVICE_CLASS: DEVICE_CLASS_POWER,
         CONF_GETTER: lambda api: api.getCirculationPumpActive(),
     },
     # gas sensors
-    SENSOR_BURNER_ACTIVE: {
+    {
         CONF_NAME: "Burner active",
         CONF_DEVICE_CLASS: DEVICE_CLASS_POWER,
         CONF_GETTER: lambda api: api.getBurnerActive(),
     },
     # heatpump sensors
-    SENSOR_COMPRESSOR_ACTIVE: {
+    {
         CONF_NAME: "Compressor active",
         CONF_DEVICE_CLASS: DEVICE_CLASS_POWER,
         CONF_GETTER: lambda api: api.getCompressorActive(),
     },
-}
+]
 
-SENSORS_GENERIC = [SENSOR_CIRCULATION_PUMP_ACTIVE]
-
-SENSORS_BY_HEATINGTYPE = {
-    HeatingType.gas: [SENSOR_BURNER_ACTIVE],
-    HeatingType.heatpump: [
-        SENSOR_COMPRESSOR_ACTIVE,
-    ],
-    HeatingType.fuelcell: [SENSOR_BURNER_ACTIVE],
-}
+CIRCUIT_SENSORS = [
+    {
+        CONF_NAME: "Circulation pump active",
+        CONF_DEVICE_CLASS: DEVICE_CLASS_POWER,
+        CONF_GETTER: lambda api: api.getCirculationPumpActive(),
+    },
+    # gas sensors
+    {
+        CONF_NAME: "Burner active",
+        CONF_DEVICE_CLASS: DEVICE_CLASS_POWER,
+        CONF_GETTER: lambda api: api.getBurnerActive(),
+    },
+    # heatpump sensors
+    {
+        CONF_NAME: "Compressor active",
+        CONF_DEVICE_CLASS: DEVICE_CLASS_POWER,
+        CONF_GETTER: lambda api: api.getCompressorActive(),
+    },
+]
 
 
 def _build_entity(name, vicare_api, device_config, sensor):
@@ -78,23 +80,28 @@ def _build_entity(name, vicare_api, device_config, sensor):
 
 async def async_setup_entry(hass, config_entry, async_add_devices):
     """Create the ViCare binary sensor devices."""
-    heating_type = hass.data[DOMAIN][CONF_HEATING_TYPE]
-    name = hass.data[DOMAIN][VICARE_NAME]
-
-    sensors = SENSORS_GENERIC.copy()
-
-    if heating_type != HeatingType.auto:
-        sensors.extend(SENSORS_BY_HEATINGTYPE[heating_type])
+    name = hass.data[DOMAIN][config_entry.entry_id][VICARE_NAME]
 
     all_devices = [
         _build_entity(
-            f"{name} {SENSOR_TYPES[sensor][CONF_NAME]}",
-            hass.data[DOMAIN][VICARE_API],
-            hass.data[DOMAIN][VICARE_DEVICE_CONFIG],
+            f"{name} {sensor[CONF_NAME]}",
+            hass.data[DOMAIN][config_entry.entry_id][VICARE_API],
+            hass.data[DOMAIN][config_entry.entry_id][VICARE_DEVICE_CONFIG],
             sensor,
         )
-        for sensor in sensors
+        for sensor in GLOBAL_SENSORS
     ]
+
+    for sensor in CIRCUIT_SENSORS:
+        all_devices.append(
+            _build_entity(
+                f"{name} {sensor[CONF_NAME]}",
+                circuit,
+                hass.data[DOMAIN][config_entry.entry_id][VICARE_DEVICE_CONFIG],
+                sensor,
+            )
+            for circuit in hass.data[DOMAIN][config_entry.entry_id][VICARE_CIRCUITS]
+        )
 
     async_add_devices(all_devices)
 
@@ -105,23 +112,17 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
     if discovery_info is None:
         return
 
-    heating_type = hass.data[DOMAIN][CONF_HEATING_TYPE]
     name = hass.data[DOMAIN][VICARE_NAME]
-
-    sensors = SENSORS_GENERIC.copy()
-
-    if heating_type != HeatingType.auto:
-        sensors.extend(SENSORS_BY_HEATINGTYPE[heating_type])
 
     add_entities(
         [
             _build_entity(
-                f"{name} {SENSOR_TYPES[sensor][CONF_NAME]}",
+                f"{name} {sensor[CONF_NAME]}",
                 hass.data[DOMAIN][VICARE_API],
                 hass.data[DOMAIN][VICARE_DEVICE_CONFIG],
                 sensor,
             )
-            for sensor in sensors
+            for sensor in GLOBAL_SENSORS
         ]
     )
 
@@ -129,13 +130,12 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
 class ViCareBinarySensor(BinarySensorEntity):
     """Representation of a ViCare sensor."""
 
-    def __init__(self, name, api, device_config, sensor_type):
+    def __init__(self, name, api, device_config, sensor):
         """Initialize the sensor."""
-        self._sensor = SENSOR_TYPES[sensor_type]
+        self._sensor = sensor
         self._name = name
         self._api = api
         self._device_config = device_config
-        self._sensor_type = sensor_type
         self._state = None
 
     @property

@@ -24,6 +24,7 @@ from .const import (
     DOMAIN,
     PLATFORMS,
     VICARE_API,
+    VICARE_CIRCUITS,
     VICARE_DEVICE_CONFIG,
     VICARE_NAME,
     HeatingType,
@@ -79,13 +80,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     _LOGGER.debug("Setting up ViCare component")
 
     hass.data[DOMAIN] = {}
-    hass.data[DOMAIN][VICARE_NAME] = entry.data[CONF_NAME]
+
+    hass.data[DOMAIN][entry.entry_id] = {}
+    hass.data[DOMAIN][entry.entry_id][VICARE_NAME] = entry.data[CONF_NAME]
     if entry.data.get(CONF_HEATING_TYPE) is not None:
-        hass.data[DOMAIN][CONF_HEATING_TYPE] = HeatingType[
+        hass.data[DOMAIN][entry.entry_id][CONF_HEATING_TYPE] = HeatingType[
             entry.data[CONF_HEATING_TYPE]
         ]
     else:
-        hass.data[DOMAIN][CONF_HEATING_TYPE] = DEFAULT_HEATING_TYPE
+        hass.data[DOMAIN][entry.entry_id][CONF_HEATING_TYPE] = DEFAULT_HEATING_TYPE
 
     # For previous config entries where unique_id is None
     if entry.unique_id is None:
@@ -93,15 +96,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             entry, unique_id=entry.data[CONF_USERNAME]
         )
 
-    await hass.async_add_executor_job(setup_vicare_api, hass, entry.data)
+    await hass.async_add_executor_job(
+        setup_vicare_api, hass, entry.data, hass.data[DOMAIN][entry.entry_id]
+    )
 
     hass.config_entries.async_setup_platforms(entry, PLATFORMS)
-    # TODO: await async_setup_services(hass)
 
     return True
 
 
-def setup_vicare_api(hass, conf):
+def setup_vicare_api(hass, conf, entity_data):
     """Set up PyVicare API."""
     vicare_api = PyViCare()
     vicare_api.setCacheDuration(conf[CONF_SCAN_INTERVAL])
@@ -117,7 +121,7 @@ def setup_vicare_api(hass, conf):
         _LOGGER.info(
             "Found device: %s (online: %s)", device.getModel(), str(device.isOnline())
         )
-    hass.data[DOMAIN][VICARE_DEVICE_CONFIG] = device
+    entity_data[VICARE_DEVICE_CONFIG] = device
 
     device_types = [
         (device.asAutoDetectDevice, HeatingType.auto),
@@ -129,6 +133,17 @@ def setup_vicare_api(hass, conf):
     ]
 
     for (creator_method, heating_type) in device_types:
-        if heating_type == hass.data[DOMAIN][CONF_HEATING_TYPE]:
+        if heating_type == entity_data[CONF_HEATING_TYPE]:
             _LOGGER.info("Using creator_method %s", creator_method.__name__)
-            hass.data[DOMAIN][VICARE_API] = creator_method()
+            entity_data[VICARE_API] = creator_method()
+
+    entity_data[VICARE_CIRCUITS] = entity_data[VICARE_API].circuits
+
+
+async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """Unload ViCare config entry."""
+    unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+    if unload_ok:
+        hass.data[DOMAIN].pop(entry.entry_id)
+
+    return unload_ok

@@ -8,6 +8,7 @@ PLATFORMS = ["climate", "sensor", "binary_sensor", "water_heater"]
 VICARE_DEVICE_CONFIG = "device_conf"
 VICARE_API = "api"
 VICARE_NAME = "name"
+VICARE_CIRCUITS = "circuits"
 
 CONF_CIRCUIT = "circuit"
 CONF_HEATING_TYPE = "heating_type"
