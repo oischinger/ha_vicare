@@ -33,33 +33,14 @@ GLOBAL_SENSORS = [
         CONF_DEVICE_CLASS: DEVICE_CLASS_POWER,
         CONF_GETTER: lambda api: api.getCirculationPumpActive(),
     },
-    # gas sensors
     {
         CONF_NAME: "Burner active",
         CONF_DEVICE_CLASS: DEVICE_CLASS_POWER,
         CONF_GETTER: lambda api: api.getBurnerActive(),
-    },
-    # heatpump sensors
-    {
-        CONF_NAME: "Compressor active",
-        CONF_DEVICE_CLASS: DEVICE_CLASS_POWER,
-        CONF_GETTER: lambda api: api.getCompressorActive(),
     },
 ]
 
 CIRCUIT_SENSORS = [
-    {
-        CONF_NAME: "Circulation pump active",
-        CONF_DEVICE_CLASS: DEVICE_CLASS_POWER,
-        CONF_GETTER: lambda api: api.getCirculationPumpActive(),
-    },
-    # gas sensors
-    {
-        CONF_NAME: "Burner active",
-        CONF_DEVICE_CLASS: DEVICE_CLASS_POWER,
-        CONF_GETTER: lambda api: api.getBurnerActive(),
-    },
-    # heatpump sensors
     {
         CONF_NAME: "Compressor active",
         CONF_DEVICE_CLASS: DEVICE_CLASS_POWER,
@@ -69,39 +50,52 @@ CIRCUIT_SENSORS = [
 
 
 def _build_entity(name, vicare_api, device_config, sensor):
-    _LOGGER.debug("Found device %s", name)
-    return ViCareBinarySensor(
-        name,
-        vicare_api,
-        device_config,
-        sensor,
-    )
+    try:
+        sensor[CONF_GETTER](vicare_api)
+        _LOGGER.debug("Found entity %s", name)
+        return ViCareBinarySensor(
+            name,
+            vicare_api,
+            device_config,
+            sensor,
+        )
+    except PyViCareNotSupportedFeatureError:
+        _LOGGER.warn("Feature not supported %s", name)
+        return None
+    except AttributeError:
+        _LOGGER.debug("Attribute Error %s", name)
+        return None
+
 
 
 async def async_setup_entry(hass, config_entry, async_add_devices):
     """Create the ViCare binary sensor devices."""
     name = hass.data[DOMAIN][config_entry.entry_id][VICARE_NAME]
 
-    all_devices = [
-        _build_entity(
+    all_devices = []
+    for sensor in GLOBAL_SENSORS:
+        entity = _build_entity(
             f"{name} {sensor[CONF_NAME]}",
             hass.data[DOMAIN][config_entry.entry_id][VICARE_API],
             hass.data[DOMAIN][config_entry.entry_id][VICARE_DEVICE_CONFIG],
             sensor,
         )
-        for sensor in GLOBAL_SENSORS
-    ]
+        if entity != None:
+            all_devices.append(entity)
 
     for sensor in CIRCUIT_SENSORS:
-        all_devices.append(
-            _build_entity(
-                f"{name} {sensor[CONF_NAME]}",
+        for circuit in hass.data[DOMAIN][config_entry.entry_id][VICARE_CIRCUITS]:
+            suffix = ""
+            if len(hass.data[DOMAIN][config_entry.entry_id][VICARE_CIRCUITS]) > 1:
+                suffix = f" {circuit.id}"
+            entity = _build_entity(
+                f"{name} {sensor[CONF_NAME]}{suffix}",
                 circuit,
                 hass.data[DOMAIN][config_entry.entry_id][VICARE_DEVICE_CONFIG],
                 sensor,
             )
-            for circuit in hass.data[DOMAIN][config_entry.entry_id][VICARE_CIRCUITS]
-        )
+            if entity != None:
+                all_devices.append(entity)
 
     async_add_devices(all_devices)
 

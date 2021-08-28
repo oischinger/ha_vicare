@@ -2,6 +2,12 @@
 import logging
 
 from PyViCare.PyViCare import PyViCare
+from PyViCare.PyViCareFuelCell import FuelCell
+from PyViCare.PyViCareGazBoiler import GazBoiler
+from PyViCare.PyViCareHeatPump import HeatPump
+from PyViCare.PyViCareOilBoiler import OilBoiler
+from PyViCare.PyViCarePelletsBoiler import PelletsBoiler
+
 import voluptuous as vol
 
 from homeassistant.config_entries import ConfigEntry
@@ -137,7 +143,11 @@ def setup_vicare_api(hass, conf, entity_data):
             _LOGGER.info("Using creator_method %s", creator_method.__name__)
             entity_data[VICARE_API] = creator_method()
 
+    entity_data[VICARE_API]
     entity_data[VICARE_CIRCUITS] = entity_data[VICARE_API].circuits
+
+    # Call some method to get data
+    entity_data[VICARE_API].getAvailableCircuits()
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
