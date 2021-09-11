@@ -5,6 +5,7 @@ import logging
 from PyViCare.PyViCareUtils import (
     PyViCareNotSupportedFeatureError,
     PyViCareRateLimitError,
+    PyViCareInvalidDataError,
 )
 import requests
 import voluptuous as vol
@@ -252,6 +253,8 @@ class ViCareClimate(ClimateEntity):
             _LOGGER.error("Vicare API rate limit exceeded: %s", limit_exception)
         except ValueError:
             _LOGGER.error("Unable to decode data from ViCare server")
+        except PyViCareInvalidDataError as invalid_data_exception:
+            _LOGGER.error("Invalid data from Vicare server: %s", invalid_data_exception)
 
     @property
     def supported_features(self):

@@ -5,6 +5,7 @@ import logging
 from PyViCare.PyViCareUtils import (
     PyViCareNotSupportedFeatureError,
     PyViCareRateLimitError,
+    PyViCareInvalidDataError,
 )
 import requests
 
@@ -250,7 +251,7 @@ def _build_entity(name, vicare_api, device_config, sensor):
             sensor,
         )
     except PyViCareNotSupportedFeatureError:
-        _LOGGER.warn("Feature not supported %s", name)
+        _LOGGER.info("Feature not supported %s", name)
         return None
     except AttributeError:
         _LOGGER.debug("Attribute Error %s", name)
@@ -379,3 +380,5 @@ class ViCareSensor(SensorEntity):
             _LOGGER.error("Unable to decode data from ViCare server")
         except PyViCareRateLimitError as limit_exception:
             _LOGGER.error("Vicare API rate limit exceeded: %s", limit_exception)
+        except PyViCareInvalidDataError as invalid_data_exception:
+            _LOGGER.error("Invalid data from Vicare server: %s", invalid_data_exception)
