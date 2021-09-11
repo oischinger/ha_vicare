@@ -69,16 +69,20 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
     """Set up the ViCare climate platform."""
     name = hass.data[DOMAIN][config_entry.entry_id][VICARE_NAME]
 
-    all_devices = [
-        _build_entity(
-            f"{name} Water",
+    all_devices = []
+    for circuit in hass.data[DOMAIN][config_entry.entry_id][VICARE_CIRCUITS]:
+        suffix = ""
+        if len(hass.data[DOMAIN][config_entry.entry_id][VICARE_CIRCUITS]) > 1:
+            suffix = f" {circuit.id}"
+        entity = _build_entity(
+            f"{name} Water{suffix}",
             hass.data[DOMAIN][config_entry.entry_id][VICARE_API],
             circuit,
             hass.data[DOMAIN][config_entry.entry_id][VICARE_DEVICE_CONFIG],
             hass.data[DOMAIN][config_entry.entry_id][CONF_HEATING_TYPE],
         )
-        for circuit in hass.data[DOMAIN][config_entry.entry_id][VICARE_CIRCUITS]
-    ]
+        if entity != None:
+            all_devices.append(entity)
 
     async_add_devices(all_devices)
 

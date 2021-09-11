@@ -102,16 +102,21 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
     """Set up the ViCare climate platform."""
     name = hass.data[DOMAIN][config_entry.entry_id][VICARE_NAME]
 
-    all_devices = [
-        _build_entity(
-            f"{name} Heating",
+    all_devices = []
+
+    for circuit in hass.data[DOMAIN][config_entry.entry_id][VICARE_CIRCUITS]:
+        suffix = ""
+        if len(hass.data[DOMAIN][config_entry.entry_id][VICARE_CIRCUITS]) > 1:
+            suffix = f" {circuit.id}"
+        entity = _build_entity(
+            f"{name} Heating{suffix}",
             hass.data[DOMAIN][config_entry.entry_id][VICARE_API],
             hass.data[DOMAIN][config_entry.entry_id][VICARE_DEVICE_CONFIG],
             circuit,
             hass.data[DOMAIN][config_entry.entry_id][CONF_HEATING_TYPE],
         )
-        for circuit in hass.data[DOMAIN][config_entry.entry_id][VICARE_CIRCUITS]
-    ]
+        if entity != None:
+            all_devices.append(entity)
 
     platform = entity_platform.async_get_current_platform()
 
