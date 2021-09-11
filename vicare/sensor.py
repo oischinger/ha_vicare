@@ -18,6 +18,7 @@ from homeassistant.const import (
     DEVICE_CLASS_ENERGY,
     DEVICE_CLASS_POWER,
     DEVICE_CLASS_TEMPERATURE,
+    DEVICE_CLASS_GAS,
     ENERGY_KILO_WATT_HOUR,
     PERCENTAGE,
     POWER_WATT,
@@ -64,59 +65,51 @@ GLOBAL_SENSORS = [
     },
     {
         CONF_NAME: "Hot water gas consumption today",
-        CONF_ICON: "mdi:power",
         CONF_UNIT_OF_MEASUREMENT: ENERGY_KILO_WATT_HOUR,
         CONF_GETTER: lambda api: api.getGasConsumptionDomesticHotWaterToday(),
-        CONF_DEVICE_CLASS: None,
+        CONF_DEVICE_CLASS: DEVICE_CLASS_GAS,
     },
     {
         CONF_NAME: "Hot water gas consumption this week",
-        CONF_ICON: "mdi:power",
         CONF_UNIT_OF_MEASUREMENT: ENERGY_KILO_WATT_HOUR,
         CONF_GETTER: lambda api: api.getGasConsumptionDomesticHotWaterThisWeek(),
-        CONF_DEVICE_CLASS: None,
+        CONF_DEVICE_CLASS: DEVICE_CLASS_GAS,
     },
     {
         CONF_NAME: "Hot water gas consumption this month",
-        CONF_ICON: "mdi:power",
         CONF_UNIT_OF_MEASUREMENT: ENERGY_KILO_WATT_HOUR,
         CONF_GETTER: lambda api: api.getGasConsumptionDomesticHotWaterThisMonth(),
-        CONF_DEVICE_CLASS: None,
+        CONF_DEVICE_CLASS: DEVICE_CLASS_GAS,
     },
     {
         CONF_NAME: "Hot water gas consumption this year",
-        CONF_ICON: "mdi:power",
         CONF_UNIT_OF_MEASUREMENT: ENERGY_KILO_WATT_HOUR,
         CONF_GETTER: lambda api: api.getGasConsumptionDomesticHotWaterThisYear(),
-        CONF_DEVICE_CLASS: None,
+        CONF_DEVICE_CLASS: DEVICE_CLASS_GAS,
     },
     {
         CONF_NAME: "Heating gas consumption today",
-        CONF_ICON: "mdi:power",
         CONF_UNIT_OF_MEASUREMENT: ENERGY_KILO_WATT_HOUR,
         CONF_GETTER: lambda api: api.getGasConsumptionHeatingToday(),
-        CONF_DEVICE_CLASS: None,
+        CONF_DEVICE_CLASS: DEVICE_CLASS_GAS,
     },
     {
         CONF_NAME: "Heating gas consumption this week",
-        CONF_ICON: "mdi:power",
         CONF_UNIT_OF_MEASUREMENT: ENERGY_KILO_WATT_HOUR,
         CONF_GETTER: lambda api: api.getGasConsumptionHeatingThisWeek(),
-        CONF_DEVICE_CLASS: None,
+        CONF_DEVICE_CLASS: DEVICE_CLASS_GAS,
     },
     {
         CONF_NAME: "Heating gas consumption this month",
-        CONF_ICON: "mdi:power",
         CONF_UNIT_OF_MEASUREMENT: ENERGY_KILO_WATT_HOUR,
         CONF_GETTER: lambda api: api.getGasConsumptionHeatingThisMonth(),
-        CONF_DEVICE_CLASS: None,
+        CONF_DEVICE_CLASS: DEVICE_CLASS_GAS,
     },
     {
         CONF_NAME: "Heating gas consumption this year",
-        CONF_ICON: "mdi:power",
         CONF_UNIT_OF_MEASUREMENT: ENERGY_KILO_WATT_HOUR,
         CONF_GETTER: lambda api: api.getGasConsumptionHeatingThisYear(),
-        CONF_DEVICE_CLASS: None,
+        CONF_DEVICE_CLASS: DEVICE_CLASS_GAS,
     },
     {
         CONF_NAME: "Burner Starts",
@@ -352,7 +345,7 @@ class ViCareSensor(SensorEntity):
     @property
     def icon(self):
         """Icon to use in the frontend, if any."""
-        return self._sensor[CONF_ICON]
+        return self._sensor.get(CONF_ICON)
 
     @property
     def state(self):
