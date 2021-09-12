@@ -36,6 +36,8 @@ from .const import (
     HeatingType,
 )
 
+import homeassistant.util.dt as dt_util
+
 _LOGGER = logging.getLogger(__name__)
 
 CONF_GETTER = "getter"
@@ -60,7 +62,7 @@ GLOBAL_SENSORS = [
         CONF_NAME: "Burner modulation",
         CONF_ICON: "mdi:percent",
         CONF_UNIT_OF_MEASUREMENT: PERCENTAGE,
-        CONF_GETTER: lambda api: api.getBurnerModulation(),
+        CONF_GETTER: lambda api: api.getModulation(),
         CONF_DEVICE_CLASS: None,
     },
     {
@@ -115,14 +117,14 @@ GLOBAL_SENSORS = [
         CONF_NAME: "Burner Starts",
         CONF_ICON: "mdi:counter",
         CONF_UNIT_OF_MEASUREMENT: None,
-        CONF_GETTER: lambda api: api.getBurnerStarts(),
+        CONF_GETTER: lambda api: api.getStarts(),
         CONF_DEVICE_CLASS: None,
     },
     {
         CONF_NAME: "Burner Hours",
         CONF_ICON: "mdi:counter",
         CONF_UNIT_OF_MEASUREMENT: TIME_HOURS,
-        CONF_GETTER: lambda api: api.getBurnerHours(),
+        CONF_GETTER: lambda api: api.getHours(),
         CONF_DEVICE_CLASS: None,
     },
     # heatpump sensors
@@ -362,8 +364,14 @@ class ViCareSensor(SensorEntity):
         """Return the class of this device, from component DEVICE_CLASSES."""
         return self._sensor[CONF_DEVICE_CLASS]
 
+    @property
+    def last_reset(self):
+        """Return the time when the sensor was last reset."""
+        return self._last_reset
+
     def update(self):
         """Update state of sensor."""
+        self._last_reset = dt_util.start_of_local_day()
         try:
             with suppress(PyViCareNotSupportedFeatureError):
                 self._state = self._sensor[CONF_GETTER](self._api)
