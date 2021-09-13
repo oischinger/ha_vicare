@@ -59,13 +59,6 @@ GLOBAL_SENSORS = [
         CONF_DEVICE_CLASS: DEVICE_CLASS_TEMPERATURE,
     },
     {
-        CONF_NAME: "Burner modulation",
-        CONF_ICON: "mdi:percent",
-        CONF_UNIT_OF_MEASUREMENT: PERCENTAGE,
-        CONF_GETTER: lambda api: api.getModulation(),
-        CONF_DEVICE_CLASS: None,
-    },
-    {
         CONF_NAME: "Hot water gas consumption today",
         CONF_UNIT_OF_MEASUREMENT: ENERGY_KILO_WATT_HOUR,
         CONF_GETTER: lambda api: api.getGasConsumptionDomesticHotWaterToday(),
@@ -181,7 +174,9 @@ CIRCUIT_SENSORS = [
         CONF_GETTER: lambda api: api.getSupplyTemperature(),
         CONF_DEVICE_CLASS: DEVICE_CLASS_TEMPERATURE,
     },
-    # heatpump sensors
+]
+
+BURNER_SENSORS = [
     {
         CONF_NAME: "Compressor Starts",
         CONF_ICON: "mdi:counter",
@@ -194,6 +189,13 @@ CIRCUIT_SENSORS = [
         CONF_ICON: "mdi:counter",
         CONF_UNIT_OF_MEASUREMENT: TIME_HOURS,
         CONF_GETTER: lambda api: api.getCompressorHours(),
+        CONF_DEVICE_CLASS: None,
+    },
+    {
+        CONF_NAME: "Burner modulation",
+        CONF_ICON: "mdi:percent",
+        CONF_UNIT_OF_MEASUREMENT: PERCENTAGE,
+        CONF_GETTER: lambda api: api.getModulation(),
         CONF_DEVICE_CLASS: None,
     },
     {
@@ -233,7 +235,6 @@ CIRCUIT_SENSORS = [
     },
 ]
 
-
 def _build_entity(name, vicare_api, device_config, sensor):
     _LOGGER.debug("Found device %s", name)
     try:
@@ -257,12 +258,13 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
     """Create the ViCare sensor devices."""
     heating_type = hass.data[DOMAIN][config_entry.entry_id][CONF_HEATING_TYPE]
     name = hass.data[DOMAIN][config_entry.entry_id][VICARE_NAME]
+    api = hass.data[DOMAIN][config_entry.entry_id][VICARE_API]
 
     all_devices = []
     for sensor in GLOBAL_SENSORS:
         entity = _build_entity(
             f"{name} {sensor[CONF_NAME]}",
-            hass.data[DOMAIN][config_entry.entry_id][VICARE_API],
+            api,
             hass.data[DOMAIN][config_entry.entry_id][VICARE_DEVICE_CONFIG],
             sensor,
         )
@@ -270,9 +272,9 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
             all_devices.append(entity)
 
     for sensor in CIRCUIT_SENSORS:
-        for circuit in hass.data[DOMAIN][config_entry.entry_id][VICARE_CIRCUITS]:
+        for circuit in api.circuits:
             suffix = ""
-            if len(hass.data[DOMAIN][config_entry.entry_id][VICARE_CIRCUITS]) > 1:
+            if len(api.circuits) > 1:
                 suffix = f" {circuit.id}"
             entity = _build_entity(
                 f"{name} {sensor[CONF_NAME]}{suffix}",
@@ -282,6 +284,23 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
             )
             if entity != None:
                 all_devices.append(entity)
+
+    try:
+        for sensor in BURNER_SENSORS:
+            for burner in api.burners:
+                suffix = ""
+                if len(api.burner) > 1:
+                    suffix = f" {burner.id}"
+                entity = _build_entity(
+                    f"{name} {sensor[CONF_NAME]}{suffix}",
+                    burner,
+                    hass.data[DOMAIN][config_entry.entry_id][VICARE_DEVICE_CONFIG],
+                    sensor,
+                )
+                if entity != None:
+                    all_devices.append(entity)
+    except PyViCareNotSupportedFeatureError:
+        _LOGGER.info("No burners found")
 
     async_add_devices(all_devices)
 
