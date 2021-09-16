@@ -120,14 +120,6 @@ GLOBAL_SENSORS = [
         CONF_GETTER: lambda api: api.getHours(),
         CONF_DEVICE_CLASS: None,
     },
-    # heatpump sensors
-    {
-        CONF_NAME: "Return Temperature",
-        CONF_ICON: None,
-        CONF_UNIT_OF_MEASUREMENT: TEMP_CELSIUS,
-        CONF_GETTER: lambda api: api.getReturnTemperature(),
-        CONF_DEVICE_CLASS: DEVICE_CLASS_TEMPERATURE,
-    },
     # fuelcell sensors
     {
         CONF_NAME: "Power production current",
@@ -178,6 +170,37 @@ CIRCUIT_SENSORS = [
 
 BURNER_SENSORS = [
     {
+        CONF_NAME: "Burner Starts",
+        CONF_ICON: "mdi:counter",
+        CONF_UNIT_OF_MEASUREMENT: None,
+        CONF_GETTER: lambda api: api.getCompressorStarts(),
+        CONF_DEVICE_CLASS: None,
+    },
+    {
+        CONF_NAME: "Burner Hours",
+        CONF_ICON: "mdi:counter",
+        CONF_UNIT_OF_MEASUREMENT: TIME_HOURS,
+        CONF_GETTER: lambda api: api.getCompressorHours(),
+        CONF_DEVICE_CLASS: None,
+    },
+    {
+        CONF_NAME: "Burner modulation",
+        CONF_ICON: "mdi:percent",
+        CONF_UNIT_OF_MEASUREMENT: PERCENTAGE,
+        CONF_GETTER: lambda api: api.getModulation(),
+        CONF_DEVICE_CLASS: None,
+    },
+]
+
+COMPRESSOR_SENSORS = [
+    {
+        CONF_NAME: "Return Temperature",
+        CONF_ICON: None,
+        CONF_UNIT_OF_MEASUREMENT: TEMP_CELSIUS,
+        CONF_GETTER: lambda api: api.getReturnTemperature(),
+        CONF_DEVICE_CLASS: DEVICE_CLASS_TEMPERATURE,
+    },
+    {
         CONF_NAME: "Compressor Starts",
         CONF_ICON: "mdi:counter",
         CONF_UNIT_OF_MEASUREMENT: None,
@@ -189,13 +212,6 @@ BURNER_SENSORS = [
         CONF_ICON: "mdi:counter",
         CONF_UNIT_OF_MEASUREMENT: TIME_HOURS,
         CONF_GETTER: lambda api: api.getCompressorHours(),
-        CONF_DEVICE_CLASS: None,
-    },
-    {
-        CONF_NAME: "Burner modulation",
-        CONF_ICON: "mdi:percent",
-        CONF_UNIT_OF_MEASUREMENT: PERCENTAGE,
-        CONF_GETTER: lambda api: api.getModulation(),
         CONF_DEVICE_CLASS: None,
     },
     {
@@ -289,7 +305,7 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
         for sensor in BURNER_SENSORS:
             for burner in api.burners:
                 suffix = ""
-                if len(api.burner) > 1:
+                if len(api.burners) > 1:
                     suffix = f" {burner.id}"
                 entity = _build_entity(
                     f"{name} {sensor[CONF_NAME]}{suffix}",
@@ -301,6 +317,23 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
                     all_devices.append(entity)
     except PyViCareNotSupportedFeatureError:
         _LOGGER.info("No burners found")
+
+    try:
+        for sensor in COMPRESSOR_SENSORS:
+            for compressor in api.compressors:
+                suffix = ""
+                if len(api.compressors) > 1:
+                    suffix = f" {compressor.id}"
+                entity = _build_entity(
+                    f"{name} {sensor[CONF_NAME]}{suffix}",
+                    compressor,
+                    hass.data[DOMAIN][config_entry.entry_id][VICARE_DEVICE_CONFIG],
+                    sensor,
+                )
+                if entity != None:
+                    all_devices.append(entity)
+    except PyViCareNotSupportedFeatureError:
+        _LOGGER.info("No compressor found")
 
     async_add_devices(all_devices)
 
