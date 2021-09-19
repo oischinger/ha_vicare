@@ -173,14 +173,14 @@ BURNER_SENSORS = [
         CONF_NAME: "Burner Starts",
         CONF_ICON: "mdi:counter",
         CONF_UNIT_OF_MEASUREMENT: None,
-        CONF_GETTER: lambda api: api.getCompressorStarts(),
+        CONF_GETTER: lambda api: api.getStarts(),
         CONF_DEVICE_CLASS: None,
     },
     {
         CONF_NAME: "Burner Hours",
         CONF_ICON: "mdi:counter",
         CONF_UNIT_OF_MEASUREMENT: TIME_HOURS,
-        CONF_GETTER: lambda api: api.getCompressorHours(),
+        CONF_GETTER: lambda api: api.getHours(),
         CONF_DEVICE_CLASS: None,
     },
     {
