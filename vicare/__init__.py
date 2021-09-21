@@ -2,16 +2,14 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-import enum
 import logging
-from typing import Callable, Generic, TypeVar
+from typing import Callable
 
+from PyViCare.PyViCare import PyViCare
 from PyViCare.PyViCareDevice import Device
-from PyViCare.PyViCareFuelCell import FuelCell
-from PyViCare.PyViCareGazBoiler import GazBoiler
-from PyViCare.PyViCareHeatPump import HeatPump
 import voluptuous as vol
 
+from homeassistant.config_entries import SOURCE_IMPORT, ConfigEntry
 from homeassistant.const import (
     CONF_CLIENT_ID,
     CONF_NAME,
@@ -19,41 +17,31 @@ from homeassistant.const import (
     CONF_SCAN_INTERVAL,
     CONF_USERNAME,
 )
-from homeassistant.helpers import discovery
+from homeassistant.core import HomeAssistant
 import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.storage import STORAGE_DIR
 
-_LOGGER = logging.getLogger(__name__)
-
-PLATFORMS = ["climate", "sensor", "binary_sensor", "water_heater"]
-
-DOMAIN = "vicare"
-VICARE_API = "api"
-VICARE_NAME = "name"
-VICARE_HEATING_TYPE = "heating_type"
-
-CONF_CIRCUIT = "circuit"
-CONF_HEATING_TYPE = "heating_type"
-DEFAULT_HEATING_TYPE = "generic"
-
-
-ApiT = TypeVar("ApiT", bound=Device)
+from .const import (
+    CONF_HEATING_TYPE,
+    DEFAULT_HEATING_TYPE,
+    DOMAIN,
+    PLATFORMS,
+    VICARE_API,
+    VICARE_CIRCUITS,
+    VICARE_DEVICE_CONFIG,
+    VICARE_NAME,
+    HeatingType,
+)
 
 
 @dataclass()
-class ViCareRequiredKeysMixin(Generic[ApiT]):
+class ViCareRequiredKeysMixin:
     """Mixin for required keys."""
 
-    value_getter: Callable[[ApiT], bool]
+    value_getter: Callable[[Device], bool]
 
 
-class HeatingType(enum.Enum):
-    """Possible options for heating type."""
-
-    generic = "generic"
-    gas = "gas"
-    heatpump = "heatpump"
-    fuelcell = "fuelcell"
+_LOGGER = logging.getLogger(__name__)
 
 
 CONFIG_SCHEMA = vol.Schema(
@@ -66,7 +54,6 @@ CONFIG_SCHEMA = vol.Schema(
                 vol.Optional(CONF_SCAN_INTERVAL, default=60): vol.All(
                     cv.time_period, lambda value: value.total_seconds()
                 ),
-                vol.Optional(CONF_CIRCUIT): int,
                 vol.Optional(CONF_NAME, default="ViCare"): cv.string,
                 vol.Optional(CONF_HEATING_TYPE, default=DEFAULT_HEATING_TYPE): cv.enum(
                     HeatingType
@@ -78,38 +65,94 @@ CONFIG_SCHEMA = vol.Schema(
 )
 
 
-def setup(hass, config):
-    """Create the ViCare component."""
-    conf = config[DOMAIN]
-    params = {"token_file": hass.config.path(STORAGE_DIR, "vicare_token.save")}
-    if conf.get(CONF_CIRCUIT) is not None:
-        params["circuit"] = conf[CONF_CIRCUIT]
+async def async_setup(hass: HomeAssistant, config) -> bool:
+    """Set up the ViCare component from yaml."""
+    if DOMAIN not in config:
+        # Setup via UI. No need to continue yaml-based setup
+        return True
 
-    params["cacheDuration"] = conf.get(CONF_SCAN_INTERVAL)
-    params["client_id"] = conf.get(CONF_CLIENT_ID)
-    heating_type = conf[CONF_HEATING_TYPE]
-
-    try:
-        if heating_type == HeatingType.gas:
-            vicare_api = GazBoiler(conf[CONF_USERNAME], conf[CONF_PASSWORD], **params)
-        elif heating_type == HeatingType.heatpump:
-            vicare_api = HeatPump(conf[CONF_USERNAME], conf[CONF_PASSWORD], **params)
-        elif heating_type == HeatingType.fuelcell:
-            vicare_api = FuelCell(conf[CONF_USERNAME], conf[CONF_PASSWORD], **params)
-        else:
-            vicare_api = Device(conf[CONF_USERNAME], conf[CONF_PASSWORD], **params)
-    except AttributeError:
-        _LOGGER.error(
-            "Failed to create PyViCare API client. Please check your credentials"
+    hass.async_create_task(
+        hass.config_entries.flow.async_init(
+            DOMAIN,
+            context={"source": SOURCE_IMPORT},
+            data=config[DOMAIN],
         )
-        return False
-
-    hass.data[DOMAIN] = {}
-    hass.data[DOMAIN][VICARE_API] = vicare_api
-    hass.data[DOMAIN][VICARE_NAME] = conf[CONF_NAME]
-    hass.data[DOMAIN][VICARE_HEATING_TYPE] = heating_type
-
-    for platform in PLATFORMS:
-        discovery.load_platform(hass, platform, DOMAIN, {}, config)
+    )
 
     return True
+
+
+async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """Set up from config entry."""
+    _LOGGER.debug("Setting up ViCare component")
+
+    hass.data[DOMAIN] = {}
+
+    hass.data[DOMAIN][entry.entry_id] = {}
+    hass.data[DOMAIN][entry.entry_id][VICARE_NAME] = entry.data[CONF_NAME]
+
+    if entry.data.get(CONF_HEATING_TYPE) is not None:
+        hass.data[DOMAIN][entry.entry_id][CONF_HEATING_TYPE] = HeatingType[
+            entry.data[CONF_HEATING_TYPE]
+        ]
+    else:
+        hass.data[DOMAIN][entry.entry_id][CONF_HEATING_TYPE] = DEFAULT_HEATING_TYPE
+
+    # For previous config entries where unique_id is None
+    if entry.unique_id is None:
+        hass.config_entries.async_update_entry(
+            entry, unique_id=entry.data[CONF_USERNAME]
+        )
+
+    await hass.async_add_executor_job(
+        setup_vicare_api, hass, entry.data, hass.data[DOMAIN][entry.entry_id]
+    )
+
+    hass.config_entries.async_setup_platforms(entry, PLATFORMS)
+
+    return True
+
+
+def setup_vicare_api(hass, conf, entity_data):
+    """Set up PyVicare API."""
+    vicare_api = PyViCare()
+    vicare_api.setCacheDuration(conf[CONF_SCAN_INTERVAL])
+    vicare_api.initWithCredentials(
+        conf[CONF_USERNAME],
+        conf[CONF_PASSWORD],
+        conf[CONF_CLIENT_ID],
+        hass.config.path(STORAGE_DIR, "vicare_token.save"),
+    )
+
+    device = vicare_api.devices[0]
+    for device in vicare_api.devices:
+        _LOGGER.info(
+            "Found device: %s (online: %s)", device.getModel(), str(device.isOnline())
+        )
+    entity_data[VICARE_DEVICE_CONFIG] = device
+
+    device_types = [
+        (device.asAutoDetectDevice, HeatingType.auto),
+        (device.asGazBoiler, HeatingType.gas),
+        (device.asFuelCell, HeatingType.fuelcell),
+        (device.asHeatPump, HeatingType.heatpump),
+        (device.asOilBoiler, HeatingType.oil),
+        (device.asPelletsBoiler, HeatingType.pellets),
+    ]
+
+    for (creator_method, heating_type) in device_types:
+        if heating_type == entity_data[CONF_HEATING_TYPE]:
+            _LOGGER.info("Using creator_method %s", creator_method.__name__)
+            entity_data[VICARE_API] = creator_method()
+
+    entity_data[VICARE_API]
+    entity_data[VICARE_CIRCUITS] = entity_data[VICARE_API].circuits
+
+
+async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """Unload ViCare config entry."""
+    unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+    if unload_ok:
+        hass.data[DOMAIN].pop(entry.entry_id)
+
+    return unload_ok
