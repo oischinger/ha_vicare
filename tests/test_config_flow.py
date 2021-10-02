@@ -1,6 +1,8 @@
 """Test the ViCare config flow."""
 from unittest.mock import patch
 
+from PyViCare.PyViCareUtils import PyViCareInvalidCredentialsError
+
 from homeassistant import config_entries, data_entry_flow, setup
 from homeassistant.components.vicare.const import CONF_HEATING_TYPE, DOMAIN
 from homeassistant.const import (
@@ -19,9 +21,12 @@ async def test_form(hass):
         DOMAIN, context={"source": config_entries.SOURCE_USER}
     )
     assert result["type"] == data_entry_flow.RESULT_TYPE_FORM
-    assert result["errors"] is None
+    assert len(result["errors"]) == 0
 
     with patch(
+        "homeassistant.components.vicare.config_flow.ConfigFlow.vicare_login",
+        return_value=None,
+    ), patch(
         "homeassistant.components.vicare.async_setup_entry",
         return_value=True,
     ), patch(
@@ -93,3 +98,28 @@ async def test_import(hass):
         await hass.async_block_till_done()
         assert len(mock_setup.mock_calls) == 1
         assert len(mock_setup_entry.mock_calls) == 1
+
+
+async def test_invalid_login(hass) -> None:
+    """Test a flow with an invalid Vicare My Pages login."""
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": config_entries.SOURCE_USER}
+    )
+
+    with patch(
+        "homeassistant.components.vicare.config_flow.ConfigFlow.vicare_login",
+        side_effect=PyViCareInvalidCredentialsError,
+    ):
+        result2 = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {
+                CONF_USERNAME: "foo@bar.com",
+                CONF_PASSWORD: "1234",
+                CONF_CLIENT_ID: "5678",
+            },
+        )
+        await hass.async_block_till_done()
+
+    assert result2["type"] == data_entry_flow.RESULT_TYPE_FORM
+    assert result2["step_id"] == "user"
+    assert result2["errors"] == {"base": "invalid_auth"}

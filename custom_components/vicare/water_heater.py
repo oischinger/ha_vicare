@@ -87,27 +87,6 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
     async_add_devices(all_devices)
 
 
-async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
-    """Create the ViCare water_heater devices."""
-    # Legacy setup. Remove after configuration.yaml deprecation end
-    if discovery_info is None:
-        return
-
-    name = hass.data[DOMAIN][VICARE_NAME]
-
-    async_add_entities(
-        [
-            _build_entity(
-                f"{name} Water",
-                hass.data[DOMAIN][VICARE_API],
-                hass.data[DOMAIN][VICARE_DEVICE_CONFIG],
-                hass.data[DOMAIN][CONF_HEATING_TYPE],
-            )
-            for circuit in hass.data[DOMAIN][VICARE_CIRCUITS]
-        ]
-    )
-
-
 class ViCareWater(WaterHeaterEntity):
     """Representation of the ViCare domestic hot water device."""
 
