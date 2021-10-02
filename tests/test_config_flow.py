@@ -5,17 +5,11 @@ from homeassistant import config_entries, data_entry_flow, setup
 from homeassistant.components.vicare.const import CONF_HEATING_TYPE, DOMAIN
 from homeassistant.const import (
     CONF_CLIENT_ID,
-    CONF_HOST,
     CONF_NAME,
     CONF_PASSWORD,
-    CONF_PORT,
     CONF_SCAN_INTERVAL,
     CONF_USERNAME,
 )
-
-from . import create_mock_client
-
-from tests.common import MockConfigEntry
 
 
 async def test_form(hass):

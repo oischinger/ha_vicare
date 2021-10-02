@@ -42,11 +42,14 @@ GLOBAL_SENSORS: tuple[ViCareBinarySensorEntityDescription, ...] = (
         device_class=DEVICE_CLASS_POWER,
         value_getter=lambda api: api.getCirculationPumpActive(),
     ),
+)
+
+BURNER_SENSORS: tuple[ViCareBinarySensorEntityDescription, ...] = (
     ViCareBinarySensorEntityDescription(
         key=SENSOR_BURNER_ACTIVE,
         name="Burner active",
         device_class=DEVICE_CLASS_POWER,
-        value_getter=lambda api: api.getBurnerActive(),
+        value_getter=lambda api: api.getActive(),
     ),
 )
 
@@ -108,6 +111,23 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
             if entity is not None:
                 all_devices.append(entity)
 
+    try:
+        for description in BURNER_SENSORS:
+            for burner in api.burners:
+                suffix = ""
+                if len(api.burners) > 1:
+                    suffix = f" {burner.id}"
+                entity = _build_entity(
+                    f"{name} {description.name}{suffix}",
+                    burner,
+                    hass.data[DOMAIN][config_entry.entry_id][VICARE_DEVICE_CONFIG],
+                    description,
+                )
+                if entity is not None:
+                    all_devices.append(entity)
+    except PyViCareNotSupportedFeatureError:
+        _LOGGER.info("No burners found")
+
     async_add_devices(all_devices)
 
 
@@ -120,6 +140,7 @@ class ViCareBinarySensor(BinarySensorEntity):
         self, name, api, device_config, description: ViCareBinarySensorEntityDescription
     ):
         """Initialize the sensor."""
+        self.entity_description = description
         self._attr_name = name
         self._api = api
         self.entity_description = description

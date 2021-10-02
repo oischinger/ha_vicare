@@ -4,6 +4,8 @@ from __future__ import annotations
 import logging
 from typing import Any
 
+from PyViCare.PyViCare import PyViCare
+from PyViCare.PyViCareUtils import PyViCareInvalidCredentialsError
 import voluptuous as vol
 
 from homeassistant import config_entries
@@ -17,6 +19,7 @@ from homeassistant.const import (
 )
 import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.device_registry import format_mac
+from homeassistant.helpers.storage import STORAGE_DIR
 
 from .const import (
     CONF_HEATING_TYPE,
@@ -48,11 +51,23 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 vol.Coerce(int), vol.Range(min=30)
             ),
         }
+        errors: dict[str, str] = {}
 
         if user_input is not None:
-            return self.async_create_entry(title=user_input[CONF_NAME], data=user_input)
+            try:
+                await self.hass.async_add_executor_job(self.vicare_login, user_input)
+                return self.async_create_entry(
+                    title=user_input[CONF_NAME], data=user_input
+                )
+            except PyViCareInvalidCredentialsError as ex:
+                _LOGGER.debug("Could not log in to ViCare, %s", ex)
+                errors["base"] = "invalid_auth"
 
-        return self.async_show_form(step_id="user", data_schema=vol.Schema(data_schema))
+        return self.async_show_form(
+            step_id="user",
+            data_schema=vol.Schema(data_schema),
+            errors=errors,
+        )
 
     async def async_step_dhcp(self, discovery_info):
         """Invoke when a Viessmann MAC address is discovered on the network."""
@@ -79,4 +94,14 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         return self.async_create_entry(
             title="Configuration.yaml",
             data=import_info,
+        )
+
+    def vicare_login(self, conf):
+        """Initiate a login via PyVicare API."""
+        vicare_api = PyViCare()
+        vicare_api.initWithCredentials(
+            conf[CONF_USERNAME],
+            conf[CONF_PASSWORD],
+            conf[CONF_CLIENT_ID],
+            self.hass.config.path(STORAGE_DIR, "vicare_token.save"),
         )

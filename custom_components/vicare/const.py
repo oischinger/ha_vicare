@@ -10,7 +10,6 @@ VICARE_API = "api"
 VICARE_NAME = "name"
 VICARE_CIRCUITS = "circuits"
 
-CONF_CIRCUIT = "circuit"
 CONF_HEATING_TYPE = "heating_type"
 
 DEFAULT_SCAN_INTERVAL = 60

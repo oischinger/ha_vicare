@@ -7,12 +7,14 @@
                     "password": "Password",
                     "client_id": "API Key",
                     "username": "Username",
-                    "heating_type": "Heating type",
-                    "circuit": "Heating circuit number"
+                    "heating_type": "Heating type"
                 },
                 "description": "Setup ViCare to control your Viessmann device.\nMinimum needed: username, password, API key.",
                 "title": "Setup ViCare"
             }
+        },
+        "error": {
+            "invalid_auth": "Invalid authentication"
         }
     }
 }
