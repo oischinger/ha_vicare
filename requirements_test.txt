@@ -1,0 +1,7 @@
+-r requirements_dev.txt
+aiodiscover >= 1.4.4
+asynctest ~= 0.13
+pytest ~= 6.2
+pytest-cov ~= 2.10
+pytest-homeassistant-custom-component >= 0.4.0
+scapy >= 2.4.5
