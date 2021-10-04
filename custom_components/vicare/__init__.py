@@ -113,6 +113,18 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     return True
 
 
+def vicare_login(hass, conf):
+    """Login via PyVicare API."""
+    vicare_api = PyViCare()
+    vicare_api.setCacheDuration(conf[CONF_SCAN_INTERVAL])
+    vicare_api.initWithCredentials(
+        conf[CONF_USERNAME],
+        conf[CONF_PASSWORD],
+        conf[CONF_CLIENT_ID],
+        hass.config.path(STORAGE_DIR, "vicare_token.save"),
+    )
+
+
 def setup_vicare_api(hass, conf, entity_data):
     """Set up PyVicare API."""
     vicare_api = PyViCare()
@@ -145,7 +157,6 @@ def setup_vicare_api(hass, conf, entity_data):
             _LOGGER.info("Using creator_method %s", creator_method.__name__)
             entity_data[VICARE_API] = creator_method()
 
-    entity_data[VICARE_API]
     entity_data[VICARE_CIRCUITS] = entity_data[VICARE_API].circuits
 
 

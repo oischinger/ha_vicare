@@ -370,6 +370,7 @@ class ViCareSensor(SensorEntity):
         self._api = api
         self._device_config = device_config
         self._state = None
+        self._last_reset = dt_util.utcnow()
 
     @property
     def device_info(self):

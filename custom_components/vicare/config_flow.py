@@ -4,7 +4,6 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from PyViCare.PyViCare import PyViCare
 from PyViCare.PyViCareUtils import PyViCareInvalidCredentialsError
 import voluptuous as vol
 
@@ -19,8 +18,8 @@ from homeassistant.const import (
 )
 import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.device_registry import format_mac
-from homeassistant.helpers.storage import STORAGE_DIR
 
+from . import vicare_login
 from .const import (
     CONF_HEATING_TYPE,
     DEFAULT_HEATING_TYPE,
@@ -38,6 +37,8 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def async_step_user(self, user_input: dict[str, Any] | None = None):
         """Invoke when a user initiates a flow via the user interface."""
+        if self._async_current_entries():
+            return self.async_abort(reason="single_instance_allowed")
 
         data_schema = {
             vol.Required(CONF_USERNAME): cv.string,
@@ -55,7 +56,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         if user_input is not None:
             try:
-                await self.hass.async_add_executor_job(self.vicare_login, user_input)
+                await self.hass.async_add_executor_job(vicare_login, user_input)
                 return self.async_create_entry(
                     title=user_input[CONF_NAME], data=user_input
                 )
@@ -94,14 +95,4 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         return self.async_create_entry(
             title="Configuration.yaml",
             data=import_info,
-        )
-
-    def vicare_login(self, conf):
-        """Initiate a login via PyVicare API."""
-        vicare_api = PyViCare()
-        vicare_api.initWithCredentials(
-            conf[CONF_USERNAME],
-            conf[CONF_PASSWORD],
-            conf[CONF_CLIENT_ID],
-            self.hass.config.path(STORAGE_DIR, "vicare_token.save"),
         )
