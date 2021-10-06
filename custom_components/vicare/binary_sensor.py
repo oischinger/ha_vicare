@@ -134,7 +134,7 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
                 if entity is not None:
                     all_devices.append(entity)
     except PyViCareNotSupportedFeatureError:
-        _LOGGER.info("No burners found")
+        _LOGGER.info("No compressors found")
 
     async_add_devices(all_devices)
 
