@@ -35,7 +35,7 @@ class ViCareBinarySensorEntityDescription(
     """Describes ViCare binary sensor entity."""
 
 
-GLOBAL_SENSORS: tuple[ViCareBinarySensorEntityDescription, ...] = (
+CIRCUIT_SENSORS: tuple[ViCareBinarySensorEntityDescription, ...] = (
     ViCareBinarySensorEntityDescription(
         key=SENSOR_CIRCULATION_PUMP_ACTIVE,
         name="Circulation pump active",
@@ -53,12 +53,12 @@ BURNER_SENSORS: tuple[ViCareBinarySensorEntityDescription, ...] = (
     ),
 )
 
-CIRCUIT_SENSORS: tuple[ViCareBinarySensorEntityDescription, ...] = (
+COMPRESSOR_SENSORS: tuple[ViCareBinarySensorEntityDescription, ...] = (
     ViCareBinarySensorEntityDescription(
         key=SENSOR_COMPRESSOR_ACTIVE,
         name="Compressor active",
         device_class=DEVICE_CLASS_POWER,
-        value_getter=lambda api: api.getCompressorActive(),
+        value_getter=lambda api: api.getActive(),
     ),
 )
 
@@ -87,15 +87,6 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
     api = hass.data[DOMAIN][config_entry.entry_id][VICARE_API]
 
     all_devices = []
-    for description in GLOBAL_SENSORS:
-        entity = _build_entity(
-            f"{name} {description.name}",
-            hass.data[DOMAIN][config_entry.entry_id][VICARE_API],
-            hass.data[DOMAIN][config_entry.entry_id][VICARE_DEVICE_CONFIG],
-            description,
-        )
-        if entity is not None:
-            all_devices.append(entity)
 
     for description in CIRCUIT_SENSORS:
         for circuit in api.circuits:
@@ -127,6 +118,23 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
                     all_devices.append(entity)
     except PyViCareNotSupportedFeatureError:
         _LOGGER.info("No burners found")
+
+    try:
+        for description in COMPRESSOR_SENSORS:
+            for compressor in api.compressors:
+                suffix = ""
+                if len(api.compressors) > 1:
+                    suffix = f" {compressor.id}"
+                entity = _build_entity(
+                    f"{name} {description.name}{suffix}",
+                    compressor,
+                    hass.data[DOMAIN][config_entry.entry_id][VICARE_DEVICE_CONFIG],
+                    description,
+                )
+                if entity is not None:
+                    all_devices.append(entity)
+    except PyViCareNotSupportedFeatureError:
+        _LOGGER.info("No compressors found")
 
     async_add_devices(all_devices)
 
