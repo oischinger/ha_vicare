@@ -56,7 +56,9 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         if user_input is not None:
             try:
-                await self.hass.async_add_executor_job(vicare_login, user_input)
+                await self.hass.async_add_executor_job(
+                    vicare_login, self.hass, user_input
+                )
                 return self.async_create_entry(
                     title=user_input[CONF_NAME], data=user_input
                 )
@@ -77,6 +79,9 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         await self.async_set_unique_id(formatted_mac)
         self._abort_if_unique_id_configured()
+
+        if self._async_current_entries():
+            return self.async_abort(reason="single_instance_allowed")
 
         return await self.async_step_user()
 

@@ -184,7 +184,7 @@ GLOBAL_SENSORS: tuple[ViCareSensorEntityDescription, ...] = (
         native_unit_of_measurement=ENERGY_KILO_WATT_HOUR,
         value_getter=lambda api: api.getPowerProductionThisYear(),
         device_class=DEVICE_CLASS_ENERGY,
-    )
+    ),
 )
 
 CIRCUIT_SENSORS: tuple[ViCareSensorEntityDescription, ...] = (
@@ -267,7 +267,7 @@ COMPRESSOR_SENSORS: tuple[ViCareSensorEntityDescription, ...] = (
         icon="mdi:counter",
         native_unit_of_measurement=TIME_HOURS,
         value_getter=lambda api: api.getHoursLoadClass5(),
-    )
+    ),
 )
 
 

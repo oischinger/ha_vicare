@@ -32,7 +32,6 @@ from .const import (
     VICARE_CIRCUITS,
     VICARE_DEVICE_CONFIG,
     VICARE_NAME,
-    HeatingType,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -253,7 +252,9 @@ class ViCareClimate(ClimateEntity):
 
             with suppress(PyViCareNotSupportedFeatureError):
                 for compressor in self._api.compressors:
-                    self._current_action = self._current_action or compressor.getActive()
+                    self._current_action = (
+                        self._current_action or compressor.getActive()
+                    )
 
         except requests.exceptions.ConnectionError:
             _LOGGER.error("Unable to retrieve data from ViCare server")
