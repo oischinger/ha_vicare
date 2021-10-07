@@ -245,13 +245,16 @@ class ViCareClimate(ClimateEntity):
                     "heating_curve_shift"
                 ] = self._circuit.getHeatingCurveShift()
 
+
             # Update the specific device attributes
-            if self._heating_type == HeatingType.gas:
-                with suppress(PyViCareNotSupportedFeatureError):
-                    self._current_action = self._api.getBurnerActive()
-            elif self._heating_type == HeatingType.heatpump:
-                with suppress(PyViCareNotSupportedFeatureError):
-                    self._current_action = self._circuit.getCompressorActive()
+            with suppress(PyViCareNotSupportedFeatureError):
+                if self._api.burners:
+                    self._current_action = self._api.burners[0].getActive()
+
+            with suppress(PyViCareNotSupportedFeatureError):
+                if self._api.compressors:
+                    self._current_action = self._api.compressors[0].getActive()
+
         except requests.exceptions.ConnectionError:
             _LOGGER.error("Unable to retrieve data from ViCare server")
         except PyViCareRateLimitError as limit_exception:
