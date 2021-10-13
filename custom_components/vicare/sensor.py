@@ -37,6 +37,7 @@ from .const import (
     VICARE_DEVICE_CONFIG,
     VICARE_NAME,
     VICARE_UNIT_TO_DEVICE_CLASS,
+    VICARE_UNIT_TO_UNIT_OF_MEASUREMENT,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -326,8 +327,10 @@ def _build_entity(name, vicare_api, device_config, sensor):
 
         if callable(sensor.unit_getter):
             with suppress(PyViCareNotSupportedFeatureError):
-                sensor.device_class = VICARE_UNIT_TO_DEVICE_CLASS.get(
-                    sensor.unit_getter(vicare_api)
+                vicare_unit = sensor.unit_getter(vicare_api)
+                sensor.device_class = VICARE_UNIT_TO_DEVICE_CLASS.get(vicare_unit)
+                sensor.native_unit_of_measurement = (
+                    VICARE_UNIT_TO_UNIT_OF_MEASUREMENT.get(vicare_unit)
                 )
         _LOGGER.debug("Found entity %s", name)
         return ViCareSensor(

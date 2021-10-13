@@ -1,7 +1,12 @@
 """Constants for the ViCare integration."""
 import enum
 
-from homeassistant.const import DEVICE_CLASS_ENERGY, DEVICE_CLASS_GAS
+from homeassistant.const import (
+    DEVICE_CLASS_ENERGY,
+    DEVICE_CLASS_GAS,
+    ENERGY_KILO_WATT_HOUR,
+    VOLUME_CUBIC_METERS,
+)
 
 DOMAIN = "vicare"
 
@@ -23,6 +28,11 @@ VICARE_KWH = "kilowattHour"
 VICARE_UNIT_TO_DEVICE_CLASS = {
     VICARE_KWH: DEVICE_CLASS_ENERGY,
     VICARE_CUBIC_METER: DEVICE_CLASS_GAS,
+}
+
+VICARE_UNIT_TO_UNIT_OF_MEASUREMENT = {
+    VICARE_KWH: ENERGY_KILO_WATT_HOUR,
+    VICARE_CUBIC_METER: VOLUME_CUBIC_METERS,
 }
 
 
