@@ -5,6 +5,7 @@ from contextlib import suppress
 from dataclasses import dataclass
 import logging
 
+from PyViCare.PyViCareGazBoiler import GazBoiler
 from PyViCare.PyViCareUtils import (
     PyViCareInvalidDataError,
     PyViCareNotSupportedFeatureError,
@@ -12,10 +13,13 @@ from PyViCare.PyViCareUtils import (
 )
 import requests
 
-from homeassistant.components.sensor import SensorEntity, SensorEntityDescription
+from homeassistant.components.sensor import (
+    STATE_CLASS_TOTAL_INCREASING,
+    SensorEntity,
+    SensorEntityDescription,
+)
 from homeassistant.const import (
     DEVICE_CLASS_ENERGY,
-    DEVICE_CLASS_GAS,
     DEVICE_CLASS_POWER,
     DEVICE_CLASS_TEMPERATURE,
     ENERGY_KILO_WATT_HOUR,
@@ -27,7 +31,13 @@ from homeassistant.const import (
 import homeassistant.util.dt as dt_util
 
 from . import ViCareRequiredKeysMixin
-from .const import DOMAIN, VICARE_API, VICARE_DEVICE_CONFIG, VICARE_NAME
+from .const import (
+    DOMAIN,
+    VICARE_API,
+    VICARE_DEVICE_CONFIG,
+    VICARE_NAME,
+    VICARE_UNIT_TO_DEVICE_CLASS,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -78,6 +88,7 @@ GLOBAL_SENSORS: tuple[ViCareSensorEntityDescription, ...] = (
         name="Outside Temperature",
         native_unit_of_measurement=TEMP_CELSIUS,
         value_getter=lambda api: api.getOutsideTemperature(),
+        unit_getter=lambda api: None,
         device_class=DEVICE_CLASS_TEMPERATURE,
     ),
     ViCareSensorEntityDescription(
@@ -85,6 +96,7 @@ GLOBAL_SENSORS: tuple[ViCareSensorEntityDescription, ...] = (
         name="Return Temperature",
         native_unit_of_measurement=TEMP_CELSIUS,
         value_getter=lambda api: api.getReturnTemperature(),
+        unit_getter=lambda api: None,
         device_class=DEVICE_CLASS_TEMPERATURE,
     ),
     ViCareSensorEntityDescription(
@@ -92,6 +104,7 @@ GLOBAL_SENSORS: tuple[ViCareSensorEntityDescription, ...] = (
         name="Boiler Temperature",
         native_unit_of_measurement=TEMP_CELSIUS,
         value_getter=lambda api: api.getBoilerTemperature(),
+        unit_getter=lambda api: None,
         device_class=DEVICE_CLASS_TEMPERATURE,
     ),
     ViCareSensorEntityDescription(
@@ -99,91 +112,115 @@ GLOBAL_SENSORS: tuple[ViCareSensorEntityDescription, ...] = (
         name="Hot water gas consumption today",
         native_unit_of_measurement=ENERGY_KILO_WATT_HOUR,
         value_getter=lambda api: api.getGasConsumptionDomesticHotWaterToday(),
-        device_class=DEVICE_CLASS_GAS,
+        unit_getter=lambda api: api.getGasConsumptionDomesticHotWaterUnit(),
+        device_class=DEVICE_CLASS_ENERGY,
+        state_class=STATE_CLASS_TOTAL_INCREASING,
     ),
     ViCareSensorEntityDescription(
         key=SENSOR_DHW_GAS_CONSUMPTION_THIS_WEEK,
         name="Hot water gas consumption this week",
         native_unit_of_measurement=ENERGY_KILO_WATT_HOUR,
         value_getter=lambda api: api.getGasConsumptionDomesticHotWaterThisWeek(),
-        device_class=DEVICE_CLASS_GAS,
+        unit_getter=lambda api: api.getGasConsumptionDomesticHotWaterUnit(),
+        device_class=DEVICE_CLASS_ENERGY,
+        state_class=STATE_CLASS_TOTAL_INCREASING,
     ),
     ViCareSensorEntityDescription(
         key=SENSOR_DHW_GAS_CONSUMPTION_THIS_MONTH,
         name="Hot water gas consumption this month",
         native_unit_of_measurement=ENERGY_KILO_WATT_HOUR,
         value_getter=lambda api: api.getGasConsumptionDomesticHotWaterThisMonth(),
-        device_class=DEVICE_CLASS_GAS,
+        unit_getter=lambda api: api.getGasConsumptionDomesticHotWaterUnit(),
+        state_class=STATE_CLASS_TOTAL_INCREASING,
     ),
     ViCareSensorEntityDescription(
         key=SENSOR_DHW_GAS_CONSUMPTION_THIS_YEAR,
         name="Hot water gas consumption this year",
         native_unit_of_measurement=ENERGY_KILO_WATT_HOUR,
         value_getter=lambda api: api.getGasConsumptionDomesticHotWaterThisYear(),
-        device_class=DEVICE_CLASS_GAS,
+        unit_getter=lambda api: api.getGasConsumptionDomesticHotWaterUnit(),
+        device_class=DEVICE_CLASS_ENERGY,
+        state_class=STATE_CLASS_TOTAL_INCREASING,
     ),
     ViCareSensorEntityDescription(
         key=SENSOR_GAS_CONSUMPTION_TODAY,
         name="Heating gas consumption today",
         native_unit_of_measurement=ENERGY_KILO_WATT_HOUR,
         value_getter=lambda api: api.getGasConsumptionHeatingToday(),
-        device_class=DEVICE_CLASS_GAS,
+        unit_getter=lambda api: api.getGasConsumptionHeatingUnit(),
+        state_class=STATE_CLASS_TOTAL_INCREASING,
     ),
     ViCareSensorEntityDescription(
         key=SENSOR_GAS_CONSUMPTION_THIS_WEEK,
         name="Heating gas consumption this week",
         native_unit_of_measurement=ENERGY_KILO_WATT_HOUR,
         value_getter=lambda api: api.getGasConsumptionHeatingThisWeek(),
-        device_class=DEVICE_CLASS_GAS,
+        unit_getter=lambda api: api.getGasConsumptionHeatingUnit(),
+        device_class=DEVICE_CLASS_ENERGY,
+        state_class=STATE_CLASS_TOTAL_INCREASING,
     ),
     ViCareSensorEntityDescription(
         key=SENSOR_GAS_CONSUMPTION_THIS_MONTH,
         name="Heating gas consumption this month",
         native_unit_of_measurement=ENERGY_KILO_WATT_HOUR,
         value_getter=lambda api: api.getGasConsumptionHeatingThisMonth(),
-        device_class=DEVICE_CLASS_GAS,
+        unit_getter=lambda api: api.getGasConsumptionHeatingUnit(),
+        device_class=DEVICE_CLASS_ENERGY,
+        state_class=STATE_CLASS_TOTAL_INCREASING,
     ),
     ViCareSensorEntityDescription(
         key=SENSOR_GAS_CONSUMPTION_THIS_YEAR,
         name="Heating gas consumption this year",
         native_unit_of_measurement=ENERGY_KILO_WATT_HOUR,
         value_getter=lambda api: api.getGasConsumptionHeatingThisYear(),
-        device_class=DEVICE_CLASS_GAS,
+        unit_getter=lambda api: api.getGasConsumptionHeatingUnit(),
+        device_class=DEVICE_CLASS_ENERGY,
+        state_class=STATE_CLASS_TOTAL_INCREASING,
     ),
     ViCareSensorEntityDescription(
         key=SENSOR_POWER_PRODUCTION_CURRENT,
         name="Power production current",
         native_unit_of_measurement=POWER_WATT,
         value_getter=lambda api: api.getPowerProductionCurrent(),
+        unit_getter=lambda api: None,
         device_class=DEVICE_CLASS_POWER,
+        state_class=STATE_CLASS_TOTAL_INCREASING,
     ),
     ViCareSensorEntityDescription(
         key=SENSOR_POWER_PRODUCTION_TODAY,
         name="Power production today",
         native_unit_of_measurement=ENERGY_KILO_WATT_HOUR,
         value_getter=lambda api: api.getPowerProductionToday(),
+        unit_getter=lambda api: None,
         device_class=DEVICE_CLASS_ENERGY,
+        state_class=STATE_CLASS_TOTAL_INCREASING,
     ),
     ViCareSensorEntityDescription(
         key=SENSOR_POWER_PRODUCTION_THIS_WEEK,
         name="Power production this week",
         native_unit_of_measurement=ENERGY_KILO_WATT_HOUR,
         value_getter=lambda api: api.getPowerProductionThisWeek(),
+        unit_getter=lambda api: None,
         device_class=DEVICE_CLASS_ENERGY,
+        state_class=STATE_CLASS_TOTAL_INCREASING,
     ),
     ViCareSensorEntityDescription(
         key=SENSOR_POWER_PRODUCTION_THIS_MONTH,
         name="Power production this month",
         native_unit_of_measurement=ENERGY_KILO_WATT_HOUR,
         value_getter=lambda api: api.getPowerProductionThisMonth(),
+        unit_getter=lambda api: None,
         device_class=DEVICE_CLASS_ENERGY,
+        state_class=STATE_CLASS_TOTAL_INCREASING,
     ),
     ViCareSensorEntityDescription(
         key=SENSOR_POWER_PRODUCTION_THIS_YEAR,
         name="Power production this year",
         native_unit_of_measurement=ENERGY_KILO_WATT_HOUR,
         value_getter=lambda api: api.getPowerProductionThisYear(),
+        unit_getter=lambda api: None,
         device_class=DEVICE_CLASS_ENERGY,
+        state_class=STATE_CLASS_TOTAL_INCREASING,
     ),
 )
 
@@ -193,6 +230,7 @@ CIRCUIT_SENSORS: tuple[ViCareSensorEntityDescription, ...] = (
         name="Supply Temperature",
         native_unit_of_measurement=TEMP_CELSIUS,
         value_getter=lambda api: api.getSupplyTemperature(),
+        unit_getter=lambda api: None,
     ),
 )
 
@@ -202,6 +240,7 @@ BURNER_SENSORS: tuple[ViCareSensorEntityDescription, ...] = (
         name="Burner Starts",
         icon="mdi:counter",
         value_getter=lambda api: api.getStarts(),
+        unit_getter=lambda api: None,
     ),
     ViCareSensorEntityDescription(
         key=SENSOR_BURNER_HOURS,
@@ -209,6 +248,7 @@ BURNER_SENSORS: tuple[ViCareSensorEntityDescription, ...] = (
         icon="mdi:counter",
         native_unit_of_measurement=TIME_HOURS,
         value_getter=lambda api: api.getHours(),
+        unit_getter=lambda api: None,
     ),
     ViCareSensorEntityDescription(
         key=SENSOR_BURNER_MODULATION,
@@ -216,6 +256,7 @@ BURNER_SENSORS: tuple[ViCareSensorEntityDescription, ...] = (
         icon="mdi:percent",
         native_unit_of_measurement=PERCENTAGE,
         value_getter=lambda api: api.getModulation(),
+        unit_getter=lambda api: None,
     ),
 )
 
@@ -225,6 +266,7 @@ COMPRESSOR_SENSORS: tuple[ViCareSensorEntityDescription, ...] = (
         name="Compressor Starts",
         icon="mdi:counter",
         value_getter=lambda api: api.getStarts(),
+        unit_getter=lambda api: None,
     ),
     ViCareSensorEntityDescription(
         key=SENSOR_COMPRESSOR_HOURS,
@@ -232,6 +274,7 @@ COMPRESSOR_SENSORS: tuple[ViCareSensorEntityDescription, ...] = (
         icon="mdi:counter",
         native_unit_of_measurement=TIME_HOURS,
         value_getter=lambda api: api.getHours(),
+        unit_getter=lambda api: None,
     ),
     ViCareSensorEntityDescription(
         key=SENSOR_COMPRESSOR_HOURS_LOADCLASS1,
@@ -239,6 +282,7 @@ COMPRESSOR_SENSORS: tuple[ViCareSensorEntityDescription, ...] = (
         icon="mdi:counter",
         native_unit_of_measurement=TIME_HOURS,
         value_getter=lambda api: api.getHoursLoadClass1(),
+        unit_getter=lambda api: None,
     ),
     ViCareSensorEntityDescription(
         key=SENSOR_COMPRESSOR_HOURS_LOADCLASS2,
@@ -246,6 +290,7 @@ COMPRESSOR_SENSORS: tuple[ViCareSensorEntityDescription, ...] = (
         icon="mdi:counter",
         native_unit_of_measurement=TIME_HOURS,
         value_getter=lambda api: api.getHoursLoadClass2(),
+        unit_getter=lambda api: None,
     ),
     ViCareSensorEntityDescription(
         key=SENSOR_COMPRESSOR_HOURS_LOADCLASS3,
@@ -253,6 +298,7 @@ COMPRESSOR_SENSORS: tuple[ViCareSensorEntityDescription, ...] = (
         icon="mdi:counter",
         native_unit_of_measurement=TIME_HOURS,
         value_getter=lambda api: api.getHoursLoadClass3(),
+        unit_getter=lambda api: None,
     ),
     ViCareSensorEntityDescription(
         key=SENSOR_COMPRESSOR_HOURS_LOADCLASS4,
@@ -260,6 +306,7 @@ COMPRESSOR_SENSORS: tuple[ViCareSensorEntityDescription, ...] = (
         icon="mdi:counter",
         native_unit_of_measurement=TIME_HOURS,
         value_getter=lambda api: api.getHoursLoadClass4(),
+        unit_getter=lambda api: None,
     ),
     ViCareSensorEntityDescription(
         key=SENSOR_COMPRESSOR_HOURS_LOADCLASS5,
@@ -267,6 +314,7 @@ COMPRESSOR_SENSORS: tuple[ViCareSensorEntityDescription, ...] = (
         icon="mdi:counter",
         native_unit_of_measurement=TIME_HOURS,
         value_getter=lambda api: api.getHoursLoadClass5(),
+        unit_getter=lambda api: None,
     ),
 )
 
@@ -275,6 +323,12 @@ def _build_entity(name, vicare_api, device_config, sensor):
     _LOGGER.debug("Found device %s", name)
     try:
         sensor.value_getter(vicare_api)
+
+        if callable(sensor.unit_getter):
+            with suppress(PyViCareNotSupportedFeatureError):
+                sensor.device_class = VICARE_UNIT_TO_DEVICE_CLASS.get(
+                    sensor.unit_getter(vicare_api)
+                )
         _LOGGER.debug("Found entity %s", name)
         return ViCareSensor(
             name,
@@ -294,6 +348,10 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
     """Create the ViCare sensor devices."""
     name = hass.data[DOMAIN][config_entry.entry_id][VICARE_NAME]
     api = hass.data[DOMAIN][config_entry.entry_id][VICARE_API]
+
+    if isinstance(api, GazBoiler):
+        api.getGasConsumptionHeatingUnit()
+        api.getGasConsumptionDomesticHotWaterUnit()
 
     all_devices = []
     for description in GLOBAL_SENSORS:

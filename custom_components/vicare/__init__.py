@@ -39,6 +39,7 @@ class ViCareRequiredKeysMixin:
     """Mixin for required keys."""
 
     value_getter: Callable[[Device], bool]
+    unit_getter: Callable[[Device], bool | None]
 
 
 _LOGGER = logging.getLogger(__name__)
