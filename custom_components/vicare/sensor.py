@@ -328,10 +328,11 @@ def _build_entity(name, vicare_api, device_config, sensor):
         if callable(sensor.unit_getter):
             with suppress(PyViCareNotSupportedFeatureError):
                 vicare_unit = sensor.unit_getter(vicare_api)
-                sensor.device_class = VICARE_UNIT_TO_DEVICE_CLASS.get(vicare_unit)
-                sensor.native_unit_of_measurement = (
-                    VICARE_UNIT_TO_UNIT_OF_MEASUREMENT.get(vicare_unit)
-                )
+                if vicare_unit is not None:
+                    sensor.device_class = VICARE_UNIT_TO_DEVICE_CLASS.get(vicare_unit)
+                    sensor.native_unit_of_measurement = (
+                        VICARE_UNIT_TO_UNIT_OF_MEASUREMENT.get(vicare_unit)
+                    )
         _LOGGER.debug("Found entity %s", name)
         return ViCareSensor(
             name,
