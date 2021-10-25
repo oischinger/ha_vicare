@@ -55,6 +55,7 @@ HA_TO_VICARE_HVAC_DHW = {
 
 
 def _build_entity(name, vicare_api, circuit, device_config, heating_type):
+    """Create a ViCare water_heater entity."""
     _LOGGER.debug("Found device %s", name)
     return ViCareWater(
         name,
@@ -131,7 +132,7 @@ class ViCareWater(WaterHeaterEntity):
     @property
     def unique_id(self):
         """Return unique ID for this device."""
-        return f"{self._device_config.getConfig().serial}-{self._name}"
+        return f"{self._device_config.getConfig().serial}-water-{self._circuit.id}"
 
     @property
     def device_info(self):
@@ -170,8 +171,7 @@ class ViCareWater(WaterHeaterEntity):
 
     def set_temperature(self, **kwargs):
         """Set new target temperatures."""
-        temp = kwargs.get(ATTR_TEMPERATURE)
-        if temp is not None:
+        if (temp := kwargs.get(ATTR_TEMPERATURE)) is not None:
             self._api.setDomesticHotWaterTemperature(temp)
             self._target_temperature = temp
 

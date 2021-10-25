@@ -10,10 +10,10 @@ VICARE_API = "api"
 VICARE_NAME = "name"
 VICARE_CIRCUITS = "circuits"
 
+CONF_CIRCUIT = "circuit"
 CONF_HEATING_TYPE = "heating_type"
 
 DEFAULT_SCAN_INTERVAL = 60
-DEFAULT_HEATING_TYPE = "auto"
 
 
 class HeatingType(enum.Enum):
@@ -25,3 +25,15 @@ class HeatingType(enum.Enum):
     pellets = "pellets"
     heatpump = "heatpump"
     fuelcell = "fuelcell"
+
+
+DEFAULT_HEATING_TYPE = HeatingType.auto
+
+HEATING_TYPE_TO_CREATOR_METHOD = {
+    HeatingType.auto: "asAutoDetectDevice",
+    HeatingType.gas: "asGazBoiler",
+    HeatingType.fuelcell: "asFuelCell",
+    HeatingType.heatpump: "asHeatPump",
+    HeatingType.oil: "asOilBoiler",
+    HeatingType.pellets: "asPelletsBoiler",
+}

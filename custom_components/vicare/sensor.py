@@ -12,10 +12,13 @@ from PyViCare.PyViCareUtils import (
 )
 import requests
 
-from homeassistant.components.sensor import SensorEntity, SensorEntityDescription
+from homeassistant.components.sensor import (
+    STATE_CLASS_TOTAL_INCREASING,
+    SensorEntity,
+    SensorEntityDescription,
+)
 from homeassistant.const import (
     DEVICE_CLASS_ENERGY,
-    DEVICE_CLASS_GAS,
     DEVICE_CLASS_POWER,
     DEVICE_CLASS_TEMPERATURE,
     ENERGY_KILO_WATT_HOUR,
@@ -99,56 +102,64 @@ GLOBAL_SENSORS: tuple[ViCareSensorEntityDescription, ...] = (
         name="Hot water gas consumption today",
         native_unit_of_measurement=ENERGY_KILO_WATT_HOUR,
         value_getter=lambda api: api.getGasConsumptionDomesticHotWaterToday(),
-        device_class=DEVICE_CLASS_GAS,
+        device_class=DEVICE_CLASS_ENERGY,
+        state_class=STATE_CLASS_TOTAL_INCREASING,
     ),
     ViCareSensorEntityDescription(
         key=SENSOR_DHW_GAS_CONSUMPTION_THIS_WEEK,
         name="Hot water gas consumption this week",
         native_unit_of_measurement=ENERGY_KILO_WATT_HOUR,
         value_getter=lambda api: api.getGasConsumptionDomesticHotWaterThisWeek(),
-        device_class=DEVICE_CLASS_GAS,
+        device_class=DEVICE_CLASS_ENERGY,
+        state_class=STATE_CLASS_TOTAL_INCREASING,
     ),
     ViCareSensorEntityDescription(
         key=SENSOR_DHW_GAS_CONSUMPTION_THIS_MONTH,
         name="Hot water gas consumption this month",
         native_unit_of_measurement=ENERGY_KILO_WATT_HOUR,
         value_getter=lambda api: api.getGasConsumptionDomesticHotWaterThisMonth(),
-        device_class=DEVICE_CLASS_GAS,
+        device_class=DEVICE_CLASS_ENERGY,
+        state_class=STATE_CLASS_TOTAL_INCREASING,
     ),
     ViCareSensorEntityDescription(
         key=SENSOR_DHW_GAS_CONSUMPTION_THIS_YEAR,
         name="Hot water gas consumption this year",
         native_unit_of_measurement=ENERGY_KILO_WATT_HOUR,
         value_getter=lambda api: api.getGasConsumptionDomesticHotWaterThisYear(),
-        device_class=DEVICE_CLASS_GAS,
+        device_class=DEVICE_CLASS_ENERGY,
+        state_class=STATE_CLASS_TOTAL_INCREASING,
     ),
     ViCareSensorEntityDescription(
         key=SENSOR_GAS_CONSUMPTION_TODAY,
         name="Heating gas consumption today",
         native_unit_of_measurement=ENERGY_KILO_WATT_HOUR,
         value_getter=lambda api: api.getGasConsumptionHeatingToday(),
-        device_class=DEVICE_CLASS_GAS,
+        device_class=DEVICE_CLASS_ENERGY,
+        state_class=STATE_CLASS_TOTAL_INCREASING,
     ),
     ViCareSensorEntityDescription(
         key=SENSOR_GAS_CONSUMPTION_THIS_WEEK,
         name="Heating gas consumption this week",
         native_unit_of_measurement=ENERGY_KILO_WATT_HOUR,
         value_getter=lambda api: api.getGasConsumptionHeatingThisWeek(),
-        device_class=DEVICE_CLASS_GAS,
+        device_class=DEVICE_CLASS_ENERGY,
+        state_class=STATE_CLASS_TOTAL_INCREASING,
     ),
     ViCareSensorEntityDescription(
         key=SENSOR_GAS_CONSUMPTION_THIS_MONTH,
         name="Heating gas consumption this month",
         native_unit_of_measurement=ENERGY_KILO_WATT_HOUR,
         value_getter=lambda api: api.getGasConsumptionHeatingThisMonth(),
-        device_class=DEVICE_CLASS_GAS,
+        device_class=DEVICE_CLASS_ENERGY,
+        state_class=STATE_CLASS_TOTAL_INCREASING,
     ),
     ViCareSensorEntityDescription(
         key=SENSOR_GAS_CONSUMPTION_THIS_YEAR,
         name="Heating gas consumption this year",
         native_unit_of_measurement=ENERGY_KILO_WATT_HOUR,
         value_getter=lambda api: api.getGasConsumptionHeatingThisYear(),
-        device_class=DEVICE_CLASS_GAS,
+        device_class=DEVICE_CLASS_ENERGY,
+        state_class=STATE_CLASS_TOTAL_INCREASING,
     ),
     ViCareSensorEntityDescription(
         key=SENSOR_POWER_PRODUCTION_CURRENT,
@@ -156,6 +167,7 @@ GLOBAL_SENSORS: tuple[ViCareSensorEntityDescription, ...] = (
         native_unit_of_measurement=POWER_WATT,
         value_getter=lambda api: api.getPowerProductionCurrent(),
         device_class=DEVICE_CLASS_POWER,
+        state_class=STATE_CLASS_TOTAL_INCREASING,
     ),
     ViCareSensorEntityDescription(
         key=SENSOR_POWER_PRODUCTION_TODAY,
@@ -163,6 +175,7 @@ GLOBAL_SENSORS: tuple[ViCareSensorEntityDescription, ...] = (
         native_unit_of_measurement=ENERGY_KILO_WATT_HOUR,
         value_getter=lambda api: api.getPowerProductionToday(),
         device_class=DEVICE_CLASS_ENERGY,
+        state_class=STATE_CLASS_TOTAL_INCREASING,
     ),
     ViCareSensorEntityDescription(
         key=SENSOR_POWER_PRODUCTION_THIS_WEEK,
@@ -170,6 +183,7 @@ GLOBAL_SENSORS: tuple[ViCareSensorEntityDescription, ...] = (
         native_unit_of_measurement=ENERGY_KILO_WATT_HOUR,
         value_getter=lambda api: api.getPowerProductionThisWeek(),
         device_class=DEVICE_CLASS_ENERGY,
+        state_class=STATE_CLASS_TOTAL_INCREASING,
     ),
     ViCareSensorEntityDescription(
         key=SENSOR_POWER_PRODUCTION_THIS_MONTH,
@@ -177,6 +191,7 @@ GLOBAL_SENSORS: tuple[ViCareSensorEntityDescription, ...] = (
         native_unit_of_measurement=ENERGY_KILO_WATT_HOUR,
         value_getter=lambda api: api.getPowerProductionThisMonth(),
         device_class=DEVICE_CLASS_ENERGY,
+        state_class=STATE_CLASS_TOTAL_INCREASING,
     ),
     ViCareSensorEntityDescription(
         key=SENSOR_POWER_PRODUCTION_THIS_YEAR,
@@ -184,6 +199,7 @@ GLOBAL_SENSORS: tuple[ViCareSensorEntityDescription, ...] = (
         native_unit_of_measurement=ENERGY_KILO_WATT_HOUR,
         value_getter=lambda api: api.getPowerProductionThisYear(),
         device_class=DEVICE_CLASS_ENERGY,
+        state_class=STATE_CLASS_TOTAL_INCREASING,
     ),
 )
 
@@ -272,22 +288,44 @@ COMPRESSOR_SENSORS: tuple[ViCareSensorEntityDescription, ...] = (
 
 
 def _build_entity(name, vicare_api, device_config, sensor):
+    """Create a ViCare sensor entity."""
     _LOGGER.debug("Found device %s", name)
     try:
         sensor.value_getter(vicare_api)
         _LOGGER.debug("Found entity %s", name)
-        return ViCareSensor(
-            name,
-            vicare_api,
-            device_config,
-            sensor,
-        )
     except PyViCareNotSupportedFeatureError:
         _LOGGER.info("Feature not supported %s", name)
         return None
     except AttributeError:
         _LOGGER.debug("Attribute Error %s", name)
         return None
+
+    return ViCareSensor(
+        name,
+        vicare_api,
+        device_config,
+        sensor,
+    )
+
+
+async def _entities_from_descriptions(
+    hass, name, all_devices, sensor_descriptions, iterables
+):
+    """Create entities from descriptions and list of burners/circuits."""
+    for description in sensor_descriptions:
+        for current in iterables:
+            suffix = ""
+            if len(iterables) > 1:
+                suffix = f" {current.id}"
+            entity = await hass.async_add_executor_job(
+                _build_entity,
+                f"{name} {description.name}{suffix}",
+                current,
+                hass.data[DOMAIN][VICARE_DEVICE_CONFIG],
+                description,
+            )
+            if entity is not None:
+                all_devices.append(entity)
 
 
 async def async_setup_entry(hass, config_entry, async_add_devices):
@@ -297,7 +335,8 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
 
     all_devices = []
     for description in GLOBAL_SENSORS:
-        entity = _build_entity(
+        entity = await hass.async_add_executor_job(
+            _build_entity,
             f"{name} {description.name}",
             api,
             hass.data[DOMAIN][config_entry.entry_id][VICARE_DEVICE_CONFIG],
@@ -311,7 +350,8 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
             suffix = ""
             if len(api.circuits) > 1:
                 suffix = f" {circuit.id}"
-            entity = _build_entity(
+            entity = await hass.async_add_executor_job(
+                _build_entity,
                 f"{name} {description.name}{suffix}",
                 circuit,
                 hass.data[DOMAIN][config_entry.entry_id][VICARE_DEVICE_CONFIG],
@@ -321,38 +361,18 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
                 all_devices.append(entity)
 
     try:
-        for description in BURNER_SENSORS:
-            for burner in api.burners:
-                suffix = ""
-                if len(api.burners) > 1:
-                    suffix = f" {burner.id}"
-                entity = _build_entity(
-                    f"{name} {description.name}{suffix}",
-                    burner,
-                    hass.data[DOMAIN][config_entry.entry_id][VICARE_DEVICE_CONFIG],
-                    description,
-                )
-                if entity is not None:
-                    all_devices.append(entity)
+        _entities_from_descriptions(
+            hass, name, all_devices, BURNER_SENSORS, api.burners
+        )
     except PyViCareNotSupportedFeatureError:
         _LOGGER.info("No burners found")
 
     try:
-        for description in COMPRESSOR_SENSORS:
-            for compressor in api.compressors:
-                suffix = ""
-                if len(api.compressors) > 1:
-                    suffix = f" {compressor.id}"
-                entity = _build_entity(
-                    f"{name} {description.name}{suffix}",
-                    compressor,
-                    hass.data[DOMAIN][config_entry.entry_id][VICARE_DEVICE_CONFIG],
-                    description,
-                )
-                if entity is not None:
-                    all_devices.append(entity)
+        _entities_from_descriptions(
+            hass, name, all_devices, COMPRESSOR_SENSORS, api.compressors
+        )
     except PyViCareNotSupportedFeatureError:
-        _LOGGER.info("No compressor found")
+        _LOGGER.info("No compressors found")
 
     async_add_devices(all_devices)
 
@@ -391,7 +411,12 @@ class ViCareSensor(SensorEntity):
     @property
     def unique_id(self):
         """Return unique ID for this device."""
-        return f"{self._device_config.getConfig().serial}-{self._attr_name}"
+        tmp_id = (
+            f"{self._device_config.getConfig().serial}-{self.entity_description.key}"
+        )
+        if hasattr(self._api, "id"):
+            return f"{tmp_id}-{self._api.id}"
+        return tmp_id
 
     @property
     def native_value(self):

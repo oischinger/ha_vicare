@@ -93,6 +93,7 @@ HA_TO_VICARE_PRESET_HEATING = {
 
 
 def _build_entity(name, vicare_api, circuit, device_config, heating_type):
+    """Create a ViCare climate entity."""
     _LOGGER.debug("Found device %s", name)
     return ViCareClimate(name, vicare_api, device_config, circuit, heating_type)
 
@@ -132,41 +133,6 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
     async_add_devices(all_devices)
 
 
-async def async_setup_platform(
-    hass, hass_config, async_add_entities, discovery_info=None
-):
-    """Create the ViCare climate devices."""
-    # Legacy setup. Remove after configuration.yaml deprecation end
-    if discovery_info is None:
-        return
-    name = hass.data[DOMAIN][VICARE_NAME]
-
-    async_add_entities(
-        [
-            _build_entity(
-                f"{name} Heating {circuit}",
-                hass.data[DOMAIN][VICARE_API],
-                hass.data[DOMAIN][VICARE_DEVICE_CONFIG],
-                circuit,
-                hass.data[DOMAIN][CONF_HEATING_TYPE],
-            )
-            for circuit in hass.data[DOMAIN][VICARE_CIRCUITS]
-        ]
-    )
-
-    platform = entity_platform.async_get_current_platform()
-
-    platform.async_register_entity_service(
-        SERVICE_SET_VICARE_MODE,
-        {
-            vol.Required(SERVICE_SET_VICARE_MODE_ATTR_MODE): vol.In(
-                VICARE_TO_HA_HVAC_HEATING
-            )
-        },
-        "set_vicare_mode",
-    )
-
-
 class ViCareClimate(ClimateEntity):
     """Representation of the ViCare heating climate device."""
 
@@ -188,7 +154,7 @@ class ViCareClimate(ClimateEntity):
     @property
     def unique_id(self):
         """Return unique ID for this device."""
-        return f"{self._device_config.getConfig().serial}-{self._name}"
+        return f"{self._device_config.getConfig().serial}-climate-{self._circuit.id}"
 
     @property
     def device_info(self):
@@ -335,8 +301,7 @@ class ViCareClimate(ClimateEntity):
 
     def set_temperature(self, **kwargs):
         """Set new target temperatures."""
-        temp = kwargs.get(ATTR_TEMPERATURE)
-        if temp is not None:
+        if (temp := kwargs.get(ATTR_TEMPERATURE)) is not None:
             self._circuit.setProgramTemperature(self._current_program, temp)
             self._target_temperature = temp
 
