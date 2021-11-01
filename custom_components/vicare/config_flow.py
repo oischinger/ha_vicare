@@ -25,6 +25,7 @@ from .const import (
     DEFAULT_HEATING_TYPE,
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
+    HeatingType,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -44,8 +45,8 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             vol.Required(CONF_USERNAME): cv.string,
             vol.Required(CONF_PASSWORD): cv.string,
             vol.Required(CONF_CLIENT_ID): cv.string,
-            vol.Optional(CONF_HEATING_TYPE, default=DEFAULT_HEATING_TYPE): vol.In(
-                [DEFAULT_HEATING_TYPE, "gas", "heatpump", "fuelcell"]
+            vol.Optional(CONF_HEATING_TYPE, default=DEFAULT_HEATING_TYPE.value): vol.In(
+                [e.value for e in HeatingType]
             ),
             vol.Optional(CONF_NAME, default="ViCare"): cv.string,
             vol.Optional(CONF_SCAN_INTERVAL, default=DEFAULT_SCAN_INTERVAL): vol.All(
@@ -87,9 +88,6 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def async_step_import(self, import_info):
         """Handle a flow initiated by a YAML config import."""
-
-        # Convert existing setups to autodetected heating type
-        import_info[CONF_HEATING_TYPE] = DEFAULT_HEATING_TYPE
 
         await self.async_set_unique_id("Configuration.yaml")
         self._abort_if_unique_id_configured()

@@ -25,6 +25,7 @@ from .const import (
     CONF_CIRCUIT,
     CONF_HEATING_TYPE,
     DEFAULT_HEATING_TYPE,
+    DEFAULT_SCAN_INTERVAL,
     DOMAIN,
     HEATING_TYPE_TO_CREATOR_METHOD,
     PLATFORMS,
@@ -54,16 +55,16 @@ CONFIG_SCHEMA = vol.Schema(
                     vol.Required(CONF_USERNAME): cv.string,
                     vol.Required(CONF_PASSWORD): cv.string,
                     vol.Required(CONF_CLIENT_ID): cv.string,
-                    vol.Optional(CONF_SCAN_INTERVAL, default=60): vol.All(
-                        cv.time_period, lambda value: value.total_seconds()
-                    ),
+                    vol.Optional(
+                        CONF_SCAN_INTERVAL, default=DEFAULT_SCAN_INTERVAL
+                    ): vol.All(cv.time_period, lambda value: value.total_seconds()),
                     vol.Optional(
                         CONF_CIRCUIT
                     ): int,  # Ignored: All circuits are now supported. Will be removed when switching to Setup via UI.
                     vol.Optional(CONF_NAME, default="ViCare"): cv.string,
                     vol.Optional(
-                        CONF_HEATING_TYPE, default=DEFAULT_HEATING_TYPE
-                    ): cv.enum(HeatingType),
+                        CONF_HEATING_TYPE, default=DEFAULT_HEATING_TYPE.value
+                    ): vol.In([e.value for e in HeatingType]),
                 }
             ),
         )
@@ -99,15 +100,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     hass.data[DOMAIN][entry.entry_id][VICARE_NAME] = entry.data[CONF_NAME]
 
     if entry.data.get(CONF_HEATING_TYPE) is not None:
-        heating_type = entry.data.get(CONF_HEATING_TYPE)
-        if type(heating_type) is HeatingType:
-            hass.data[DOMAIN][entry.entry_id][CONF_HEATING_TYPE] = heating_type
-        else:
-            hass.data[DOMAIN][entry.entry_id][CONF_HEATING_TYPE] = HeatingType[
-                entry.data[CONF_HEATING_TYPE]
-            ]
+        hass.data[DOMAIN][entry.entry_id][CONF_HEATING_TYPE] = entry.data.get(
+            CONF_HEATING_TYPE
+        )
     else:
-        hass.data[DOMAIN][entry.entry_id][CONF_HEATING_TYPE] = DEFAULT_HEATING_TYPE
+        hass.data[DOMAIN][entry.entry_id][
+            CONF_HEATING_TYPE
+        ] = DEFAULT_HEATING_TYPE.value
 
     # For previous config entries where unique_id is None
     if entry.unique_id is None:
@@ -148,7 +147,8 @@ def setup_vicare_api(hass, conf, entity_data):
         )
     entity_data[VICARE_DEVICE_CONFIG] = device
     entity_data[VICARE_API] = getattr(
-        device, HEATING_TYPE_TO_CREATOR_METHOD[conf[CONF_HEATING_TYPE]]
+        device,
+        HEATING_TYPE_TO_CREATOR_METHOD[HeatingType(entity_data[CONF_HEATING_TYPE])],
     )()
 
     entity_data[VICARE_CIRCUITS] = entity_data[VICARE_API].circuits

@@ -24,6 +24,7 @@ from homeassistant.components.climate.const import (
 )
 from homeassistant.const import ATTR_TEMPERATURE, PRECISION_WHOLE, TEMP_CELSIUS
 from homeassistant.helpers import entity_platform
+import homeassistant.helpers.config_validation as cv
 
 from .const import (
     CONF_HEATING_TYPE,
@@ -122,11 +123,7 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
 
     platform.async_register_entity_service(
         SERVICE_SET_VICARE_MODE,
-        {
-            vol.Required(SERVICE_SET_VICARE_MODE_ATTR_MODE): vol.In(
-                VICARE_TO_HA_HVAC_HEATING
-            )
-        },
+        {vol.Required(SERVICE_SET_VICARE_MODE_ATTR_MODE): cv.string},
         "set_vicare_mode",
     )
 
@@ -154,7 +151,7 @@ class ViCareClimate(ClimateEntity):
     @property
     def unique_id(self):
         """Return unique ID for this device."""
-        return f"{self._device_config.getConfig().serial}-climate-{self._circuit.id}"
+        return f"{self._device_config.getConfig().serial}-{self._circuit.id}"
 
     @property
     def device_info(self):
@@ -209,6 +206,8 @@ class ViCareClimate(ClimateEntity):
                 self._attributes[
                     "heating_curve_shift"
                 ] = self._circuit.getHeatingCurveShift()
+
+            self._attributes["vicare_modes"] = self._circuit.getModes()
 
             self._current_action = False
             # Update the specific device attributes
@@ -334,7 +333,7 @@ class ViCareClimate(ClimateEntity):
 
     def set_vicare_mode(self, vicare_mode):
         """Service function to set vicare modes directly."""
-        if vicare_mode not in VICARE_TO_HA_HVAC_HEATING:
-            raise ValueError(f"Cannot set invalid vicare mode: {vicare_mode}")
+        if vicare_mode not in self._attributes["vicare_modes"]:
+            raise ValueError(f"Cannot set invalid vicare mode: {vicare_mode}.")
 
         self._circuit.setMode(vicare_mode)
