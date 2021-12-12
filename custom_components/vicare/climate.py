@@ -211,6 +211,11 @@ class ViCareClimate(ClimateEntity):
                     "heating_curve_shift"
                 ] = self._circuit.getHeatingCurveShift()
 
+            with suppress(PyViCareNotSupportedFeatureError):
+                self._attributes[
+                    "target_supply_temperature"
+                ] = self._api.getTargetSupplyTemperature()
+
             self._attributes["vicare_modes"] = self._circuit.getModes()
 
             self._current_action = False
