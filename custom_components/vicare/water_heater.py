@@ -14,6 +14,7 @@ from homeassistant.components.water_heater import (
     WaterHeaterEntity,
 )
 from homeassistant.const import ATTR_TEMPERATURE, PRECISION_WHOLE, TEMP_CELSIUS
+from homeassistant.helpers import entity_platform
 
 from .const import (
     CONF_HEATING_TYPE,
@@ -25,6 +26,8 @@ from .const import (
 )
 
 _LOGGER = logging.getLogger(__name__)
+
+VICARE_SERVICE_ACTIVATE_ONETIMECHARGE = "activate_onetimecharge"
 
 VICARE_MODE_DHW = "dhw"
 VICARE_MODE_DHWANDHEATING = "dhwAndHeating"
@@ -87,6 +90,15 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
 
     async_add_devices(all_devices)
 
+    platform = entity_platform.async_get_current_platform()
+
+    platform.async_register_entity_service(
+        VICARE_SERVICE_ACTIVATE_ONETIMECHARGE,
+        {
+        },
+        "activate_onetimecharge",
+    )
+
 
 class ViCareWater(WaterHeaterEntity):
     """Representation of the ViCare domestic hot water device."""
@@ -119,6 +131,13 @@ class ViCareWater(WaterHeaterEntity):
 
             with suppress(PyViCareNotSupportedFeatureError):
                 self._current_mode = self._circuit.getActiveMode()
+
+            self._attributes = {}
+            with suppress(PyViCareNotSupportedFeatureError):
+                self._attributes["charching_active"] = self._api.getDomesticHotWaterChargingActive()
+
+            with suppress(PyViCareNotSupportedFeatureError):
+                self._attributes["circulation_pump_active"] = self._api.getCirculationPumpActive()
 
         except requests.exceptions.ConnectionError:
             _LOGGER.error("Unable to retrieve data from ViCare server")
@@ -199,3 +218,12 @@ class ViCareWater(WaterHeaterEntity):
     def operation_list(self):
         """Return the list of available operation modes."""
         return list(HA_TO_VICARE_HVAC_DHW)
+
+    @property
+    def extra_state_attributes(self):
+        """Show Device Attributes."""
+        return self._attributes
+
+    def activate_onetimecharge(self):
+        """Service function to activate one time hot water charge."""
+        self._api.activateOneTimeCharge()
