@@ -8,7 +8,7 @@ from PyViCare.PyViCareUtils import PyViCareInvalidCredentialsError
 import voluptuous as vol
 
 from homeassistant import config_entries
-from homeassistant.components.dhcp import MAC_ADDRESS
+from homeassistant.components import dhcp
 from homeassistant.const import (
     CONF_CLIENT_ID,
     CONF_NAME,
@@ -16,11 +16,13 @@ from homeassistant.const import (
     CONF_SCAN_INTERVAL,
     CONF_USERNAME,
 )
+from homeassistant.data_entry_flow import FlowResult
 import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.device_registry import format_mac
 
 from . import vicare_login
 from .const import (
+    CONF_CIRCUIT,
     CONF_HEATING_TYPE,
     DEFAULT_HEATING_TYPE,
     DEFAULT_SCAN_INTERVAL,
@@ -45,7 +47,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             vol.Required(CONF_USERNAME): cv.string,
             vol.Required(CONF_PASSWORD): cv.string,
             vol.Required(CONF_CLIENT_ID): cv.string,
-            vol.Optional(CONF_HEATING_TYPE, default=DEFAULT_HEATING_TYPE.value): vol.In(
+            vol.Required(CONF_HEATING_TYPE, default=DEFAULT_HEATING_TYPE.value): vol.In(
                 [e.value for e in HeatingType]
             ),
             vol.Optional(CONF_NAME, default="ViCare"): cv.string,
@@ -73,7 +75,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             errors=errors,
         )
 
-    async def async_step_dhcp(self, discovery_info):
+    async def async_step_dhcp(self, discovery_info: dhcp.DhcpServiceInfo) -> FlowResult:
         """Invoke when a Viessmann MAC address is discovered on the network."""
         formatted_mac = format_mac(discovery_info.macaddress)
         _LOGGER.info("Found device with mac %s", formatted_mac)
@@ -94,6 +96,14 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         if self._async_current_entries():
             return self.async_abort(reason="single_instance_allowed")
+
+        # Remove now unsupported config parameters
+        if import_info.get(CONF_CIRCUIT):
+            import_info.pop(CONF_CIRCUIT)
+
+        # Add former optional config if missing
+        if import_info.get(CONF_HEATING_TYPE) is None:
+            import_info[CONF_HEATING_TYPE] = DEFAULT_HEATING_TYPE.value
 
         return self.async_create_entry(
             title="Configuration.yaml",
