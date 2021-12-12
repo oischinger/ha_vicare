@@ -139,10 +139,10 @@ class ViCareWater(WaterHeaterEntity):
 
             self._attributes = {}
             with suppress(PyViCareNotSupportedFeatureError):
-                self._attributes["charching_active"] = self._api.getDomesticHotWaterChargingActive()
+                self._attributes["charging_active"] = self._api.getDomesticHotWaterChargingActive()
 
             with suppress(PyViCareNotSupportedFeatureError):
-                self._attributes["circulation_pump_active"] = self._api.getCirculationPumpActive()
+                self._attributes["circulation_pump_active"] = self._circuit.getCirculationPumpActive()
 
         except requests.exceptions.ConnectionError:
             _LOGGER.error("Unable to retrieve data from ViCare server")

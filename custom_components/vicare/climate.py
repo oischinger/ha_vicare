@@ -214,7 +214,7 @@ class ViCareClimate(ClimateEntity):
             with suppress(PyViCareNotSupportedFeatureError):
                 self._attributes[
                     "target_supply_temperature"
-                ] = self._api.getTargetSupplyTemperature()
+                ] = self._circuit.getTargetSupplyTemperature()
 
             self._attributes["vicare_modes"] = self._circuit.getModes()
 
