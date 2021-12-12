@@ -75,7 +75,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def async_step_dhcp(self, discovery_info):
         """Invoke when a Viessmann MAC address is discovered on the network."""
-        formatted_mac = format_mac(discovery_info[MAC_ADDRESS])
+        formatted_mac = format_mac(discovery_info.macaddress)
         _LOGGER.info("Found device with mac %s", formatted_mac)
 
         await self.async_set_unique_id(formatted_mac)
