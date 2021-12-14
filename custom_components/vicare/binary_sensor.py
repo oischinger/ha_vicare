@@ -29,7 +29,7 @@ SENSOR_BURNER_ACTIVE = "burner_active"
 SENSOR_COMPRESSOR_ACTIVE = "compressor_active"
 SENSOR_FROST_PROTECTION_ACTIVE = "frost_protection_active"
 SENSOR_DHW_CIRCULATION_PUMP_ACTIVE = "dhw_circulation_pump_active"
-SENSOR_CHARGING_ACTIVE = "charging_active"
+SENSOR_DHW_CHARGING_ACTIVE = "dhw_charging_active"
 SENSOR_DHW_PUMP_ACTIVE = "dhw_pump_active"
 
 @dataclass
@@ -46,8 +46,8 @@ GLOBAL_SENSORS: tuple[ViCareBinarySensorEntityDescription, ...] = (
         value_getter=lambda api: api.getDomesticHotWaterCirculationPumpActive(),
     ),
     ViCareBinarySensorEntityDescription(
-        key=SENSOR_CHARGING_ACTIVE,
-        name="Charging Active",
+        key=SENSOR_DHW_CHARGING_ACTIVE,
+        name="DHW Charging Active",
         device_class=DEVICE_CLASS_POWER,
         value_getter=lambda api: api.getDomesticHotWaterChargingActive(),
     ),
