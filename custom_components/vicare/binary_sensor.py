@@ -27,13 +27,37 @@ _LOGGER = logging.getLogger(__name__)
 SENSOR_CIRCULATION_PUMP_ACTIVE = "circulationpump_active"
 SENSOR_BURNER_ACTIVE = "burner_active"
 SENSOR_COMPRESSOR_ACTIVE = "compressor_active"
-
+SENSOR_FROST_PROTECTION_ACTIVE = "frost_protection_active"
+SENSOR_DHW_CIRCULATION_PUMP_ACTIVE = "dhw_circulation_pump_active"
+SENSOR_DHW_CHARGING_ACTIVE = "dhw_charging_active"
+SENSOR_DHW_PUMP_ACTIVE = "dhw_pump_active"
 
 @dataclass
 class ViCareBinarySensorEntityDescription(
     BinarySensorEntityDescription, ViCareRequiredKeysMixin
 ):
     """Describes ViCare binary sensor entity."""
+
+GLOBAL_SENSORS: tuple[ViCareBinarySensorEntityDescription, ...] = (
+    ViCareBinarySensorEntityDescription(
+        key=SENSOR_DHW_CIRCULATION_PUMP_ACTIVE,
+        name="DHW Circulation Pump Active",
+        device_class=DEVICE_CLASS_POWER,
+        value_getter=lambda api: api.getDomesticHotWaterCirculationPumpActive(),
+    ),
+    ViCareBinarySensorEntityDescription(
+        key=SENSOR_DHW_CHARGING_ACTIVE,
+        name="DHW Charging Active",
+        device_class=DEVICE_CLASS_POWER,
+        value_getter=lambda api: api.getDomesticHotWaterChargingActive(),
+    ),
+    ViCareBinarySensorEntityDescription(
+        key=SENSOR_DHW_PUMP_ACTIVE,
+        name="DHW Pump Active",
+        device_class=DEVICE_CLASS_POWER,
+        value_getter=lambda api: api.getDomesticHotWaterPumpActive(),
+    ),
+)
 
 
 CIRCUIT_SENSORS: tuple[ViCareBinarySensorEntityDescription, ...] = (
@@ -42,6 +66,12 @@ CIRCUIT_SENSORS: tuple[ViCareBinarySensorEntityDescription, ...] = (
         name="Circulation pump active",
         device_class=DEVICE_CLASS_POWER,
         value_getter=lambda api: api.getCirculationPumpActive(),
+    ),
+    ViCareBinarySensorEntityDescription(
+        key=SENSOR_FROST_PROTECTION_ACTIVE,
+        name="Frost protection active",
+        device_class=DEVICE_CLASS_POWER,
+        value_getter=lambda api: api.getFrostProtectionActive(),
     ),
 )
 
@@ -111,6 +141,16 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
 
     all_devices = []
 
+    for description in GLOBAL_SENSORS:
+        entity = _build_entity(
+            f"{name} {description.name}",
+            api,
+            hass.data[DOMAIN][config_entry.entry_id][VICARE_DEVICE_CONFIG],
+            description,
+        )
+        if entity is not None:
+            all_devices.append(entity)
+            
     for description in CIRCUIT_SENSORS:
         for circuit in hass.data[DOMAIN][config_entry.entry_id][VICARE_CIRCUITS]:
             suffix = ""
