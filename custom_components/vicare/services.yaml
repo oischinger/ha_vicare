@@ -20,9 +20,3 @@ set_vicare_mode:
             - 'forcedReduced'
             - 'heating'
             - 'standby'
-activate_onetimecharge:
-  name: Active one-time charge
-  description: Actives a one time charge of domestic hot water
-  target:
-    entity:
-      domain: water_heater

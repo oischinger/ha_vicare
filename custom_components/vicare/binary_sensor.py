@@ -13,24 +13,31 @@ from PyViCare.PyViCareUtils import (
 import requests
 
 from homeassistant.components.binary_sensor import (
-    DEVICE_CLASS_POWER,
+    BinarySensorDeviceClass,
     BinarySensorEntity,
     BinarySensorEntityDescription,
 )
-from homeassistant.const import CONF_NAME
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import ViCareRequiredKeysMixin
-from .const import DOMAIN, VICARE_API, VICARE_CIRCUITS, VICARE_DEVICE_CONFIG
+from .const import (
+    DOMAIN,
+    VICARE_API,
+    VICARE_CIRCUITS,
+    VICARE_DEVICE_CONFIG,
+    VICARE_NAME,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
 SENSOR_CIRCULATION_PUMP_ACTIVE = "circulationpump_active"
 SENSOR_BURNER_ACTIVE = "burner_active"
+SENSOR_CHARGING_ACTIVE = "charging_active"
 SENSOR_COMPRESSOR_ACTIVE = "compressor_active"
-SENSOR_FROST_PROTECTION_ACTIVE = "frost_protection_active"
-SENSOR_DHW_CIRCULATION_PUMP_ACTIVE = "dhw_circulation_pump_active"
-SENSOR_DHW_CHARGING_ACTIVE = "dhw_charging_active"
-SENSOR_DHW_PUMP_ACTIVE = "dhw_pump_active"
+SENSOR_SOLAR_PUMP_ACTIVE = "solar_pump_active"
+
 
 @dataclass
 class ViCareBinarySensorEntityDescription(
@@ -38,40 +45,13 @@ class ViCareBinarySensorEntityDescription(
 ):
     """Describes ViCare binary sensor entity."""
 
-GLOBAL_SENSORS: tuple[ViCareBinarySensorEntityDescription, ...] = (
-    ViCareBinarySensorEntityDescription(
-        key=SENSOR_DHW_CIRCULATION_PUMP_ACTIVE,
-        name="DHW Circulation Pump Active",
-        device_class=DEVICE_CLASS_POWER,
-        value_getter=lambda api: api.getDomesticHotWaterCirculationPumpActive(),
-    ),
-    ViCareBinarySensorEntityDescription(
-        key=SENSOR_DHW_CHARGING_ACTIVE,
-        name="DHW Charging Active",
-        device_class=DEVICE_CLASS_POWER,
-        value_getter=lambda api: api.getDomesticHotWaterChargingActive(),
-    ),
-    ViCareBinarySensorEntityDescription(
-        key=SENSOR_DHW_PUMP_ACTIVE,
-        name="DHW Pump Active",
-        device_class=DEVICE_CLASS_POWER,
-        value_getter=lambda api: api.getDomesticHotWaterPumpActive(),
-    ),
-)
-
 
 CIRCUIT_SENSORS: tuple[ViCareBinarySensorEntityDescription, ...] = (
     ViCareBinarySensorEntityDescription(
         key=SENSOR_CIRCULATION_PUMP_ACTIVE,
         name="Circulation pump active",
-        device_class=DEVICE_CLASS_POWER,
+        device_class=BinarySensorDeviceClass.POWER,
         value_getter=lambda api: api.getCirculationPumpActive(),
-    ),
-    ViCareBinarySensorEntityDescription(
-        key=SENSOR_FROST_PROTECTION_ACTIVE,
-        name="Frost protection active",
-        device_class=DEVICE_CLASS_POWER,
-        value_getter=lambda api: api.getFrostProtectionActive(),
     ),
 )
 
@@ -79,7 +59,7 @@ BURNER_SENSORS: tuple[ViCareBinarySensorEntityDescription, ...] = (
     ViCareBinarySensorEntityDescription(
         key=SENSOR_BURNER_ACTIVE,
         name="Burner active",
-        device_class=DEVICE_CLASS_POWER,
+        device_class=BinarySensorDeviceClass.POWER,
         value_getter=lambda api: api.getActive(),
     ),
 )
@@ -88,8 +68,23 @@ COMPRESSOR_SENSORS: tuple[ViCareBinarySensorEntityDescription, ...] = (
     ViCareBinarySensorEntityDescription(
         key=SENSOR_COMPRESSOR_ACTIVE,
         name="Compressor active",
-        device_class=DEVICE_CLASS_POWER,
+        device_class=BinarySensorDeviceClass.POWER,
         value_getter=lambda api: api.getActive(),
+    ),
+)
+
+GLOBAL_SENSORS: tuple[ViCareBinarySensorEntityDescription, ...] = (
+    ViCareBinarySensorEntityDescription(
+        key=SENSOR_SOLAR_PUMP_ACTIVE,
+        name="Solar pump active",
+        device_class=BinarySensorDeviceClass.POWER,
+        value_getter=lambda api: api.getSolarPumpActive(),
+    ),
+    ViCareBinarySensorEntityDescription(
+        key=SENSOR_CHARGING_ACTIVE,
+        name="Domestic Hot Water Charging active",
+        device_class=BinarySensorDeviceClass.RUNNING,
+        value_getter=lambda api: api.getDomesticHotWaterChargingActive(),
     ),
 )
 
@@ -115,7 +110,7 @@ def _build_entity(name, vicare_api, device_config, sensor):
 
 
 async def _entities_from_descriptions(
-    hass, name, all_devices, sensor_descriptions, iterables, config_entry
+    hass, name, entities, sensor_descriptions, iterables, config_entry
 ):
     """Create entities from descriptions and list of burners/circuits."""
     for description in sensor_descriptions:
@@ -131,26 +126,31 @@ async def _entities_from_descriptions(
                 description,
             )
             if entity is not None:
-                all_devices.append(entity)
+                entities.append(entity)
 
 
-async def async_setup_entry(hass, config_entry, async_add_devices):
+async def async_setup_entry(
+    hass: HomeAssistant,
+    config_entry: ConfigEntry,
+    async_add_entities: AddEntitiesCallback,
+) -> None:
     """Create the ViCare binary sensor devices."""
-    name = config_entry.data[CONF_NAME]
+    name = VICARE_NAME
     api = hass.data[DOMAIN][config_entry.entry_id][VICARE_API]
 
-    all_devices = []
+    entities = []
 
     for description in GLOBAL_SENSORS:
-        entity = _build_entity(
+        entity = await hass.async_add_executor_job(
+            _build_entity,
             f"{name} {description.name}",
             api,
             hass.data[DOMAIN][config_entry.entry_id][VICARE_DEVICE_CONFIG],
             description,
         )
         if entity is not None:
-            all_devices.append(entity)
-            
+            entities.append(entity)
+
     for description in CIRCUIT_SENSORS:
         for circuit in hass.data[DOMAIN][config_entry.entry_id][VICARE_CIRCUITS]:
             suffix = ""
@@ -164,23 +164,23 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
                 description,
             )
             if entity is not None:
-                all_devices.append(entity)
+                entities.append(entity)
 
     try:
         await _entities_from_descriptions(
-            hass, name, all_devices, BURNER_SENSORS, api.burners, config_entry
+            hass, name, entities, BURNER_SENSORS, api.burners, config_entry
         )
     except PyViCareNotSupportedFeatureError:
         _LOGGER.info("No burners found")
 
     try:
         await _entities_from_descriptions(
-            hass, name, all_devices, COMPRESSOR_SENSORS, api.compressors, config_entry
+            hass, name, entities, COMPRESSOR_SENSORS, api.compressors, config_entry
         )
     except PyViCareNotSupportedFeatureError:
         _LOGGER.info("No compressors found")
 
-    async_add_devices(all_devices)
+    async_add_entities(entities)
 
 
 class ViCareBinarySensor(BinarySensorEntity):

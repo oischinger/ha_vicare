@@ -13,14 +13,10 @@ from homeassistant.components.water_heater import (
     SUPPORT_TARGET_TEMPERATURE,
     WaterHeaterEntity,
 )
-
-from homeassistant.const import (
-    ATTR_TEMPERATURE,
-    CONF_NAME,
-    PRECISION_WHOLE,
-    TEMP_CELSIUS,
-)
-from homeassistant.helpers import entity_platform
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import ATTR_TEMPERATURE, PRECISION_WHOLE, TEMP_CELSIUS
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import (
     CONF_HEATING_TYPE,
@@ -28,11 +24,10 @@ from .const import (
     VICARE_API,
     VICARE_CIRCUITS,
     VICARE_DEVICE_CONFIG,
+    VICARE_NAME,
 )
 
 _LOGGER = logging.getLogger(__name__)
-
-VICARE_SERVICE_ACTIVATE_ONETIMECHARGE = "activate_onetimecharge"
 
 VICARE_MODE_DHW = "dhw"
 VICARE_MODE_DHWANDHEATING = "dhwAndHeating"
@@ -74,11 +69,15 @@ def _build_entity(name, vicare_api, circuit, device_config, heating_type):
     )
 
 
-async def async_setup_entry(hass, config_entry, async_add_devices):
+async def async_setup_entry(
+    hass: HomeAssistant,
+    config_entry: ConfigEntry,
+    async_add_entities: AddEntitiesCallback,
+) -> None:
     """Set up the ViCare climate platform."""
-    name = config_entry.data[CONF_NAME]
+    name = VICARE_NAME
 
-    all_devices = []
+    entities = []
     for circuit in hass.data[DOMAIN][config_entry.entry_id][VICARE_CIRCUITS]:
         suffix = ""
         if len(hass.data[DOMAIN][config_entry.entry_id][VICARE_CIRCUITS]) > 1:
@@ -91,18 +90,9 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
             config_entry.data[CONF_HEATING_TYPE],
         )
         if entity is not None:
-            all_devices.append(entity)
+            entities.append(entity)
 
-    async_add_devices(all_devices)
-
-    platform = entity_platform.async_get_current_platform()
-
-    platform.async_register_entity_service(
-        VICARE_SERVICE_ACTIVATE_ONETIMECHARGE,
-        {
-        },
-        "activate_onetimecharge",
-    )
+    async_add_entities(entities)
 
 
 class ViCareWater(WaterHeaterEntity):
@@ -136,13 +126,6 @@ class ViCareWater(WaterHeaterEntity):
 
             with suppress(PyViCareNotSupportedFeatureError):
                 self._current_mode = self._circuit.getActiveMode()
-
-            self._attributes = {}
-            with suppress(PyViCareNotSupportedFeatureError):
-                self._attributes["charging_active"] = self._api.getDomesticHotWaterChargingActive()
-
-            with suppress(PyViCareNotSupportedFeatureError):
-                self._attributes["circulation_pump_active"] = self._circuit.getCirculationPumpActive()
 
         except requests.exceptions.ConnectionError:
             _LOGGER.error("Unable to retrieve data from ViCare server")
@@ -223,12 +206,3 @@ class ViCareWater(WaterHeaterEntity):
     def operation_list(self):
         """Return the list of available operation modes."""
         return list(HA_TO_VICARE_HVAC_DHW)
-
-    @property
-    def extra_state_attributes(self):
-        """Show Device Attributes."""
-        return self._attributes
-
-    def activate_onetimecharge(self):
-        """Service function to activate one time hot water charge."""
-        self._api.activateOneTimeCharge()
