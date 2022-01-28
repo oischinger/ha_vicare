@@ -26,16 +26,6 @@ from .const import DOMAIN, VICARE_API, VICARE_DEVICE_CONFIG, VICARE_NAME
 
 _LOGGER = logging.getLogger(__name__)
 
-SENSOR_CIRCULATION_PUMP_ACTIVE = "circulationpump_active"
-SENSOR_DHW_CIRCULATION_PUMP_ACTIVE = "dhw_circulationpump_active"
-SENSOR_BURNER_ACTIVE = "burner_active"
-SENSOR_CHARGING_ACTIVE = "charging_active"
-SENSOR_COMPRESSOR_ACTIVE = "compressor_active"
-SENSOR_SOLAR_PUMP_ACTIVE = "solar_pump_active"
-SENSOR_FROST_PROTECTION_ACTIVE = "frost_protection_active"
-SENSOR_CHARGING_ACTIVE = "charging_active"
-SENSOR_DHW_PUMP_ACTIVE = "dhw_pump_active"
-
 
 @dataclass
 class ViCareBinarySensorEntityDescription(
@@ -46,13 +36,13 @@ class ViCareBinarySensorEntityDescription(
 
 CIRCUIT_SENSORS: tuple[ViCareBinarySensorEntityDescription, ...] = (
     ViCareBinarySensorEntityDescription(
-        key=SENSOR_CIRCULATION_PUMP_ACTIVE,
+        key="circulationpump_active",
         name="Circulation pump active",
         device_class=BinarySensorDeviceClass.POWER,
         value_getter=lambda api: api.getCirculationPumpActive(),
     ),
     ViCareBinarySensorEntityDescription(
-        key=SENSOR_FROST_PROTECTION_ACTIVE,
+        key="frost_protection_active",
         name="Frost protection active",
         device_class=BinarySensorDeviceClass.POWER,
         value_getter=lambda api: api.getFrostProtectionActive(),
@@ -61,7 +51,7 @@ CIRCUIT_SENSORS: tuple[ViCareBinarySensorEntityDescription, ...] = (
 
 BURNER_SENSORS: tuple[ViCareBinarySensorEntityDescription, ...] = (
     ViCareBinarySensorEntityDescription(
-        key=SENSOR_BURNER_ACTIVE,
+        key="burner_active",
         name="Burner active",
         device_class=BinarySensorDeviceClass.POWER,
         value_getter=lambda api: api.getActive(),
@@ -70,7 +60,7 @@ BURNER_SENSORS: tuple[ViCareBinarySensorEntityDescription, ...] = (
 
 COMPRESSOR_SENSORS: tuple[ViCareBinarySensorEntityDescription, ...] = (
     ViCareBinarySensorEntityDescription(
-        key=SENSOR_COMPRESSOR_ACTIVE,
+        key="compressor_active",
         name="Compressor active",
         device_class=BinarySensorDeviceClass.POWER,
         value_getter=lambda api: api.getActive(),
@@ -79,25 +69,25 @@ COMPRESSOR_SENSORS: tuple[ViCareBinarySensorEntityDescription, ...] = (
 
 GLOBAL_SENSORS: tuple[ViCareBinarySensorEntityDescription, ...] = (
     ViCareBinarySensorEntityDescription(
-        key=SENSOR_SOLAR_PUMP_ACTIVE,
+        key="solar_pump_active",
         name="Solar pump active",
         device_class=BinarySensorDeviceClass.POWER,
         value_getter=lambda api: api.getSolarPumpActive(),
     ),
     ViCareBinarySensorEntityDescription(
-        key=SENSOR_CHARGING_ACTIVE,
-        name="Domestic Hot Water Charging active",
+        key="charging_active",
+        name="DHW Charging active",
         device_class=BinarySensorDeviceClass.RUNNING,
         value_getter=lambda api: api.getDomesticHotWaterChargingActive(),
     ),
     ViCareBinarySensorEntityDescription(
-        key=SENSOR_DHW_CIRCULATION_PUMP_ACTIVE,
+        key="dhw_circulationpump_active",
         name="DHW Circulation Pump Active",
         device_class=BinarySensorDeviceClass.POWER,
         value_getter=lambda api: api.getDomesticHotWaterCirculationPumpActive(),
     ),
     ViCareBinarySensorEntityDescription(
-        key=SENSOR_DHW_PUMP_ACTIVE,
+        key="dhw_pump_active",
         name="DHW Pump Active",
         device_class=BinarySensorDeviceClass.POWER,
         value_getter=lambda api: api.getDomesticHotWaterPumpActive(),
@@ -159,16 +149,6 @@ async def async_setup_entry(
     for description in GLOBAL_SENSORS:
         entity = await hass.async_add_executor_job(
             _build_entity,
-            f"{name} {description.name}",
-            api,
-            hass.data[DOMAIN][config_entry.entry_id][VICARE_DEVICE_CONFIG],
-            description,
-        )
-        if entity is not None:
-            entities.append(entity)
-
-    for description in GLOBAL_SENSORS:
-        entity = _build_entity(
             f"{name} {description.name}",
             api,
             hass.data[DOMAIN][config_entry.entry_id][VICARE_DEVICE_CONFIG],
