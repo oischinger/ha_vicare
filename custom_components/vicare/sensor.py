@@ -133,7 +133,8 @@ GLOBAL_SENSORS: tuple[ViCareSensorEntityDescription, ...] = (
         unit_getter=lambda api: api.getGasConsumptionHeatingUnit(),
         state_class=SensorStateClass.TOTAL_INCREASING,
     ),
-ViCareSensorEntityDescription(
+    # Start of PyViCare 2.15.0 changes
+    ViCareSensorEntityDescription(
         key="gas_summary_consumption_heating_currentday",
         name="Heating gas consumption current day",
         native_unit_of_measurement=VOLUME_CUBIC_METERS,
