@@ -89,6 +89,12 @@ HA_TO_VICARE_HVAC_HEATING = {
     HVAC_MODE_AUTO: VICARE_MODE_DHWANDHEATING,
 }
 
+HA_TO_VICARE_HVAC_HEATING_ALT = {
+    HVAC_MODE_HEAT: VICARE_MODE_HEATING,
+    HVAC_MODE_OFF: VICARE_MODE_OFF,
+    HVAC_MODE_AUTO: VICARE_MODE_HEATING,
+}
+
 VICARE_TO_HA_PRESET_HEATING = {
     VICARE_PROGRAM_COMFORT: PRESET_COMFORT,
     VICARE_PROGRAM_ECO: PRESET_ECO,
@@ -282,6 +288,16 @@ class ViCareClimate(ClimateEntity):
         if vicare_mode is None:
             raise ValueError(
                 f"Cannot set invalid vicare mode: {hvac_mode} / {vicare_mode}"
+            )
+
+        supported_modes = self._attributes["vicare_modes"]
+        # Alternative heating modes
+        if vicare_mode not in supported_modes:
+            vicare_mode = HA_TO_VICARE_HVAC_HEATING_ALT.get(hvac_mode)
+
+        if vicare_mode not in supported_modes:
+            raise ValueError(
+                f"No supported vicare mode found for {hvac_mode} in {supported_modes}"
             )
 
         _LOGGER.debug("Setting hvac mode to %s / %s", hvac_mode, vicare_mode)
