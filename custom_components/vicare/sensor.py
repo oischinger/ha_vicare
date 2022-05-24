@@ -23,11 +23,11 @@ from homeassistant.components.sensor import (
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
     ENERGY_KILO_WATT_HOUR,
-    VOLUME_CUBIC_METERS,
     PERCENTAGE,
     POWER_WATT,
     TEMP_CELSIUS,
     TIME_HOURS,
+    VOLUME_CUBIC_METERS,
 )
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -133,7 +133,6 @@ GLOBAL_SENSORS: tuple[ViCareSensorEntityDescription, ...] = (
         unit_getter=lambda api: api.getGasConsumptionHeatingUnit(),
         state_class=SensorStateClass.TOTAL_INCREASING,
     ),
-    # Start of PyViCare 2.15.0 changes
     ViCareSensorEntityDescription(
         key="gas_summary_consumption_heating_currentday",
         name="Heating gas consumption current day",
@@ -155,14 +154,6 @@ GLOBAL_SENSORS: tuple[ViCareSensorEntityDescription, ...] = (
         name="Heating gas consumption current year",
         native_unit_of_measurement=VOLUME_CUBIC_METERS,
         value_getter=lambda api: api.getGasSummaryConsumptionHeatingCurrentYear(),
-        unit_getter=lambda api: api.getGasSummaryConsumptionHeatingUnit(),
-        state_class=SensorStateClass.TOTAL_INCREASING,
-    ),
-    ViCareSensorEntityDescription(
-        key="gas_summary_consumption_heating_lastsevendays",
-        name="Heating gas consumption last seven days",
-        native_unit_of_measurement=VOLUME_CUBIC_METERS,
-        value_getter=lambda api: api.getGasSummaryConsumptionHeatingLastSevenDays(),
         unit_getter=lambda api: api.getGasSummaryConsumptionHeatingUnit(),
         state_class=SensorStateClass.TOTAL_INCREASING,
     ),
@@ -199,70 +190,69 @@ GLOBAL_SENSORS: tuple[ViCareSensorEntityDescription, ...] = (
         state_class=SensorStateClass.TOTAL_INCREASING,
     ),
     ViCareSensorEntityDescription(
-        key="power_summary_consumption_heating_currentday",
-        name="Power consumption of gas heating current day",
+        key="energy_summary_consumption_heating_currentday",
+        name="Energy consumption of gas heating current day",
         native_unit_of_measurement=ENERGY_KILO_WATT_HOUR,
         value_getter=lambda api: api.getPowerSummaryConsumptionHeatingCurrentDay(),
         unit_getter=lambda api: api.getPowerSummaryConsumptionHeatingUnit(),
         state_class=SensorStateClass.TOTAL_INCREASING,
     ),
     ViCareSensorEntityDescription(
-        key="power_summary_consumption_heating_currentmonth",
-        name="Power consumption of gas heating current month",
+        key="energy_summary_consumption_heating_currentmonth",
+        name="Energy consumption of gas heating current month",
         native_unit_of_measurement=ENERGY_KILO_WATT_HOUR,
         value_getter=lambda api: api.getPowerSummaryConsumptionHeatingCurrentMonth(),
         unit_getter=lambda api: api.getPowerSummaryConsumptionHeatingUnit(),
         state_class=SensorStateClass.TOTAL_INCREASING,
     ),
     ViCareSensorEntityDescription(
-        key="power_summary_consumption_heating_currentyear",
-        name="Power consumption of gas heating current year",
+        key="energy_summary_consumption_heating_currentyear",
+        name="Energy consumption of gas heating current year",
         native_unit_of_measurement=ENERGY_KILO_WATT_HOUR,
         value_getter=lambda api: api.getPowerSummaryConsumptionHeatingCurrentYear(),
         unit_getter=lambda api: api.getPowerSummaryConsumptionHeatingUnit(),
         state_class=SensorStateClass.TOTAL_INCREASING,
     ),
     ViCareSensorEntityDescription(
-        key="power_summary_consumption_heating_lastsevendays",
-        name="Power consumption of gas heating last seven days",
+        key="energy_summary_consumption_heating_lastsevendays",
+        name="Energy consumption of gas heating last seven days",
         native_unit_of_measurement=ENERGY_KILO_WATT_HOUR,
         value_getter=lambda api: api.getPowerSummaryConsumptionHeatingLastSevenDays(),
         unit_getter=lambda api: api.getPowerSummaryConsumptionHeatingUnit(),
         state_class=SensorStateClass.TOTAL_INCREASING,
     ),
     ViCareSensorEntityDescription(
-        key="power_dhw_summary_consumption_heating_currentday",
-        name="Power consumption of hot water gas heating current day",
+        key="energy_dhw_summary_consumption_heating_currentday",
+        name="Energy consumption of hot water gas heating current day",
         native_unit_of_measurement=ENERGY_KILO_WATT_HOUR,
         value_getter=lambda api: api.getPowerSummaryConsumptionDomesticHotWaterCurrentDay(),
         unit_getter=lambda api: api.getPowerSummaryConsumptionDomesticHotWaterUnit(),
         state_class=SensorStateClass.TOTAL_INCREASING,
     ),
     ViCareSensorEntityDescription(
-        key="power_dhw_summary_consumption_heating_currentmonth",
-        name="Power consumption of hot water gas heating current month",
+        key="energy_dhw_summary_consumption_heating_currentmonth",
+        name="Energy consumption of hot water gas heating current month",
         native_unit_of_measurement=ENERGY_KILO_WATT_HOUR,
         value_getter=lambda api: api.getPowerSummaryConsumptionDomesticHotWaterCurrentMonth(),
         unit_getter=lambda api: api.getPowerSummaryConsumptionDomesticHotWaterUnit(),
         state_class=SensorStateClass.TOTAL_INCREASING,
     ),
     ViCareSensorEntityDescription(
-        key="power_dhw_summary_consumption_heating_currentyear",
-        name="Power consumption of hot water gas heating current year",
+        key="energy_dhw_summary_consumption_heating_currentyear",
+        name="Energy consumption of hot water gas heating current year",
         native_unit_of_measurement=ENERGY_KILO_WATT_HOUR,
         value_getter=lambda api: api.getPowerSummaryConsumptionDomesticHotWaterCurrentYear(),
         unit_getter=lambda api: api.getPowerSummaryConsumptionDomesticHotWaterUnit(),
         state_class=SensorStateClass.TOTAL_INCREASING,
     ),
     ViCareSensorEntityDescription(
-        key="power_summary_dhw_consumption_heating_lastsevendays",
-        name="Power consumption of hot water gas heating last seven days",
+        key="energy_summary_dhw_consumption_heating_lastsevendays",
+        name="Energy consumption of hot water gas heating last seven days",
         native_unit_of_measurement=ENERGY_KILO_WATT_HOUR,
         value_getter=lambda api: api.getPowerSummaryConsumptionDomesticHotWaterLastSevenDays(),
         unit_getter=lambda api: api.getPowerSummaryConsumptionDomesticHotWaterUnit(),
         state_class=SensorStateClass.TOTAL_INCREASING,
     ),
-    # End of PyViCare 2.15.0 changes
     ViCareSensorEntityDescription(
         key="power_production_current",
         name="Power production current",
@@ -273,7 +263,7 @@ GLOBAL_SENSORS: tuple[ViCareSensorEntityDescription, ...] = (
     ),
     ViCareSensorEntityDescription(
         key="power_production_today",
-        name="Power production today",
+        name="Energy production today",
         native_unit_of_measurement=ENERGY_KILO_WATT_HOUR,
         value_getter=lambda api: api.getPowerProductionToday(),
         device_class=SensorDeviceClass.ENERGY,
@@ -289,7 +279,7 @@ GLOBAL_SENSORS: tuple[ViCareSensorEntityDescription, ...] = (
     ),
     ViCareSensorEntityDescription(
         key="power_production_this_month",
-        name="Power production this month",
+        name="Energy production this month",
         native_unit_of_measurement=ENERGY_KILO_WATT_HOUR,
         value_getter=lambda api: api.getPowerProductionThisMonth(),
         device_class=SensorDeviceClass.ENERGY,
@@ -297,7 +287,7 @@ GLOBAL_SENSORS: tuple[ViCareSensorEntityDescription, ...] = (
     ),
     ViCareSensorEntityDescription(
         key="power_production_this_year",
-        name="Power production this year",
+        name="Energy production this year",
         native_unit_of_measurement=ENERGY_KILO_WATT_HOUR,
         value_getter=lambda api: api.getPowerProductionThisYear(),
         device_class=SensorDeviceClass.ENERGY,
@@ -321,7 +311,7 @@ GLOBAL_SENSORS: tuple[ViCareSensorEntityDescription, ...] = (
     ),
     ViCareSensorEntityDescription(
         key="solar power production today",
-        name="Solar power production today",
+        name="Solar energy production today",
         native_unit_of_measurement=ENERGY_KILO_WATT_HOUR,
         value_getter=lambda api: api.getSolarPowerProductionToday(),
         unit_getter=lambda api: api.getSolarPowerProductionUnit(),
@@ -330,7 +320,7 @@ GLOBAL_SENSORS: tuple[ViCareSensorEntityDescription, ...] = (
     ),
     ViCareSensorEntityDescription(
         key="solar power production this week",
-        name="Solar power production this week",
+        name="Solar energy production this week",
         native_unit_of_measurement=ENERGY_KILO_WATT_HOUR,
         value_getter=lambda api: api.getSolarPowerProductionThisWeek(),
         unit_getter=lambda api: api.getSolarPowerProductionUnit(),
@@ -339,7 +329,7 @@ GLOBAL_SENSORS: tuple[ViCareSensorEntityDescription, ...] = (
     ),
     ViCareSensorEntityDescription(
         key="solar power production this month",
-        name="Solar power production this month",
+        name="Solar energy production this month",
         native_unit_of_measurement=ENERGY_KILO_WATT_HOUR,
         value_getter=lambda api: api.getSolarPowerProductionThisMonth(),
         unit_getter=lambda api: api.getSolarPowerProductionUnit(),
@@ -348,7 +338,7 @@ GLOBAL_SENSORS: tuple[ViCareSensorEntityDescription, ...] = (
     ),
     ViCareSensorEntityDescription(
         key="solar power production this year",
-        name="Solar power production this year",
+        name="Solar energy production this year",
         native_unit_of_measurement=ENERGY_KILO_WATT_HOUR,
         value_getter=lambda api: api.getSolarPowerProductionThisYear(),
         unit_getter=lambda api: api.getSolarPowerProductionUnit(),
@@ -357,7 +347,7 @@ GLOBAL_SENSORS: tuple[ViCareSensorEntityDescription, ...] = (
     ),
     ViCareSensorEntityDescription(
         key="power consumption today",
-        name="Power consumption today",
+        name="Energy consumption today",
         native_unit_of_measurement=ENERGY_KILO_WATT_HOUR,
         value_getter=lambda api: api.getPowerConsumptionToday(),
         unit_getter=lambda api: api.getPowerConsumptionUnit(),
@@ -375,7 +365,7 @@ GLOBAL_SENSORS: tuple[ViCareSensorEntityDescription, ...] = (
     ),
     ViCareSensorEntityDescription(
         key="power consumption this month",
-        name="Power consumption this month",
+        name="Energy consumption this month",
         native_unit_of_measurement=ENERGY_KILO_WATT_HOUR,
         value_getter=lambda api: api.getPowerConsumptionThisMonth(),
         unit_getter=lambda api: api.getPowerConsumptionUnit(),
@@ -384,7 +374,7 @@ GLOBAL_SENSORS: tuple[ViCareSensorEntityDescription, ...] = (
     ),
     ViCareSensorEntityDescription(
         key="power consumption this year",
-        name="Power consumption this year",
+        name="Energy consumption this year",
         native_unit_of_measurement=ENERGY_KILO_WATT_HOUR,
         value_getter=lambda api: api.getPowerConsumptionThisYear(),
         unit_getter=lambda api: api.getPowerConsumptionUnit(),
