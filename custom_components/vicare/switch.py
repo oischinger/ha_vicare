@@ -1,0 +1,167 @@
+"""Viessmann ViCare sensor device."""
+from __future__ import annotations
+
+from contextlib import suppress
+from collections.abc import Callable
+from dataclasses import dataclass
+import logging
+
+from PyViCare.PyViCareUtils import (
+    PyViCareInvalidDataError,
+    PyViCareNotSupportedFeatureError,
+    PyViCareRateLimitError,
+)
+import requests
+
+from homeassistant.components.switch import SwitchEntity, SwitchEntityDescription
+from homeassistant.const import (
+    CONF_ENTITY_CATEGORY,
+    CONF_NAME,
+    STATE_ON,
+    STATE_UNAVAILABLE,
+    STATE_UNKNOWN,
+    Platform,
+)
+
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity import DeviceInfo, EntityCategory
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from PyViCare.PyViCareDevice import Device
+
+from . import ViCareRequiredKeysMixin, ViCareToggleKeysMixin
+from .const import DOMAIN, VICARE_API, VICARE_DEVICE_CONFIG, VICARE_NAME
+
+_LOGGER = logging.getLogger(__name__)
+
+SWITCH_DHW_ONETIME_CHARGE = "dhw_onetimecharge"
+
+
+@dataclass
+class ViCareSwitchEntityDescription(SwitchEntityDescription, ViCareRequiredKeysMixin, ViCareToggleKeysMixin):
+    """Describes ViCare switch entity."""
+
+
+SWITCH_DESCRIPTIONS: tuple[ViCareSwitchEntityDescription, ...] = (
+    ViCareSwitchEntityDescription(
+        key=SWITCH_DHW_ONETIME_CHARGE,
+        name="Activate one-time charge",
+        icon="mdi:shower-head",
+        entity_category=EntityCategory.CONFIG,
+        value_getter=lambda api: api.getOneTimeCharge(),
+        enabler=lambda api: api.activateOneTimeCharge(),
+        disabler=lambda api: api.deactivateOneTimeCharge(),
+    ),
+)
+
+
+async def async_setup_entry(
+        hass: HomeAssistant,
+        config_entry: ConfigEntry,
+        async_add_entities: AddEntitiesCallback,
+) -> None:
+    """Create the ViCare switch devices."""
+    name = VICARE_NAME
+    api = hass.data[DOMAIN][config_entry.entry_id][VICARE_API]
+
+    entities = []
+
+    for description in SWITCH_DESCRIPTIONS:
+        entity = ViCareSwitch(
+            f"{name} {description.name}",
+            api,
+            hass.data[DOMAIN][config_entry.entry_id][VICARE_DEVICE_CONFIG],
+            description,
+        )
+        if entity is not None:
+            entities.append(entity)
+
+    async_add_entities(entities)
+
+
+class ViCareSwitch(SwitchEntity):
+    """Representation of a ViCare switch."""
+
+    entity_description: ViCareSwitchEntityDescription
+
+    def __init__(
+            self, name, api, device_config, description: ViCareSwitchEntityDescription
+    ):
+        """Initialize the switch."""
+        self.entity_description = description
+        self._device_config = device_config
+        self._api = api
+        self._state = None
+
+    @property
+    def is_on(self) -> bool:
+        """Return true if device is on."""
+        return self._state
+
+
+    async def async_update(self):
+        """update internal state"""
+        try:
+            with suppress(PyViCareNotSupportedFeatureError):
+                self._state = await self.hass.async_add_executor_job(self.entity_description.value_getter, self._api)
+        except requests.exceptions.ConnectionError:
+            _LOGGER.error("Unable to retrieve data from ViCare server")
+        except ValueError:
+            _LOGGER.error("Unable to decode data from ViCare server")
+        except PyViCareRateLimitError as limit_exception:
+            _LOGGER.error("Vicare API rate limit exceeded: %s", limit_exception)
+        except PyViCareInvalidDataError as invalid_data_exception:
+            _LOGGER.error("Invalid data from Vicare server: %s", invalid_data_exception)
+
+
+    async def async_turn_on(self, **kwargs: Any) -> None:
+        """Handle the button press."""
+        try:
+            with suppress(PyViCareNotSupportedFeatureError):
+                """Turn the switch on."""
+                await self.hass.async_add_executor_job(self.entity_description.enabler, self._api)
+                self.async_schedule_update_ha_state(True)
+        except requests.exceptions.ConnectionError:
+            _LOGGER.error("Unable to retrieve data from ViCare server")
+        except ValueError:
+            _LOGGER.error("Unable to decode data from ViCare server")
+        except PyViCareRateLimitError as limit_exception:
+            _LOGGER.error("Vicare API rate limit exceeded: %s", limit_exception)
+        except PyViCareInvalidDataError as invalid_data_exception:
+            _LOGGER.error("Invalid data from Vicare server: %s", invalid_data_exception)
+
+    async def async_turn_off(self, **kwargs: Any) -> None:
+        """Handle the button press."""
+        try:
+            with suppress(PyViCareNotSupportedFeatureError):
+                await self.hass.async_add_executor_job(self.entity_description.disabler, self._api)
+                self.async_schedule_update_ha_state(True)
+        except requests.exceptions.ConnectionError:
+            _LOGGER.error("Unable to retrieve data from ViCare server")
+        except ValueError:
+            _LOGGER.error("Unable to decode data from ViCare server")
+        except PyViCareRateLimitError as limit_exception:
+            _LOGGER.error("Vicare API rate limit exceeded: %s", limit_exception)
+        except PyViCareInvalidDataError as invalid_data_exception:
+            _LOGGER.error("Invalid data from Vicare server: %s", invalid_data_exception)
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        """Return device info for this device."""
+        return DeviceInfo(
+            identifiers={(DOMAIN, self._device_config.getConfig().serial)},
+            name=self._device_config.getModel(),
+            manufacturer="Viessmann",
+            model=self._device_config.getModel(),
+            configuration_url="https://developer.viessmann.com/",
+        )
+
+    @property
+    def unique_id(self) -> str:
+        """Return unique ID for this device."""
+        tmp_id = (
+            f"{self._device_config.getConfig().serial}-{self.entity_description.key}"
+        )
+        if hasattr(self._api, "id"):
+            return f"{tmp_id}-{self._api.id}"
+        return tmp_id
