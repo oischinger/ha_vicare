@@ -1,9 +1,11 @@
 """Viessmann ViCare sensor device."""
 from __future__ import annotations
 
+import datetime
 from contextlib import suppress
 from collections.abc import Callable
 from dataclasses import dataclass
+import time
 import logging
 
 from PyViCare.PyViCareUtils import (
@@ -14,20 +16,11 @@ from PyViCare.PyViCareUtils import (
 import requests
 
 from homeassistant.components.switch import SwitchEntity, SwitchEntityDescription
-from homeassistant.const import (
-    CONF_ENTITY_CATEGORY,
-    CONF_NAME,
-    STATE_ON,
-    STATE_UNAVAILABLE,
-    STATE_UNKNOWN,
-    Platform,
-)
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import DeviceInfo, EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from PyViCare.PyViCareDevice import Device
 
 from . import ViCareRequiredKeysMixin, ViCareToggleKeysMixin
 from .const import DOMAIN, VICARE_API, VICARE_DEVICE_CONFIG, VICARE_NAME
@@ -35,7 +28,7 @@ from .const import DOMAIN, VICARE_API, VICARE_DEVICE_CONFIG, VICARE_NAME
 _LOGGER = logging.getLogger(__name__)
 
 SWITCH_DHW_ONETIME_CHARGE = "dhw_onetimecharge"
-
+IGNORE_FOR_SECONDS = 5
 
 @dataclass
 class ViCareSwitchEntityDescription(SwitchEntityDescription, ViCareRequiredKeysMixin, ViCareToggleKeysMixin):
@@ -91,6 +84,7 @@ class ViCareSwitch(SwitchEntity):
         self.entity_description = description
         self._device_config = device_config
         self._api = api
+        self._ignore_update_until = 0
         self._state = None
 
     @property
@@ -101,6 +95,13 @@ class ViCareSwitch(SwitchEntity):
 
     async def async_update(self):
         """update internal state"""
+        now = time.time()
+        """we have identified that the API does not directly sync the represented state, therefore we want to keep
+        an assumed state for a couple of seconds - so lets ignore an update
+        """
+        if now < self._ignore_update_until:
+            return
+
         try:
             with suppress(PyViCareNotSupportedFeatureError):
                 self._state = await self.hass.async_add_executor_job(self.entity_description.value_getter, self._api)
@@ -120,7 +121,9 @@ class ViCareSwitch(SwitchEntity):
             with suppress(PyViCareNotSupportedFeatureError):
                 """Turn the switch on."""
                 await self.hass.async_add_executor_job(self.entity_description.enabler, self._api)
-                self.async_schedule_update_ha_state(True)
+                self._ignore_update_until = time.time() + IGNORE_FOR_SECONDS
+                self._state = True
+
         except requests.exceptions.ConnectionError:
             _LOGGER.error("Unable to retrieve data from ViCare server")
         except ValueError:
@@ -135,7 +138,10 @@ class ViCareSwitch(SwitchEntity):
         try:
             with suppress(PyViCareNotSupportedFeatureError):
                 await self.hass.async_add_executor_job(self.entity_description.disabler, self._api)
-                self.async_schedule_update_ha_state(True)
+                
+                self._ignore_update_until = time.time() + IGNORE_FOR_SECONDS
+                self._state = False
+
         except requests.exceptions.ConnectionError:
             _LOGGER.error("Unable to retrieve data from ViCare server")
         except ValueError:
