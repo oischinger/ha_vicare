@@ -5,7 +5,10 @@ import datetime
 from contextlib import suppress
 from collections.abc import Callable
 from dataclasses import dataclass
-import time
+
+
+from datetime import timedelta
+
 import logging
 
 from PyViCare.PyViCareUtils import (
@@ -21,6 +24,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import DeviceInfo, EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.event import async_call_later
 
 from . import ViCareRequiredKeysMixin, ViCareToggleKeysMixin
 from .const import DOMAIN, VICARE_API, VICARE_DEVICE_CONFIG, VICARE_NAME
@@ -28,7 +32,7 @@ from .const import DOMAIN, VICARE_API, VICARE_DEVICE_CONFIG, VICARE_NAME
 _LOGGER = logging.getLogger(__name__)
 
 SWITCH_DHW_ONETIME_CHARGE = "dhw_onetimecharge"
-IGNORE_FOR_SECONDS = 5
+TIMEDELTA_UPDATE = timedelta(seconds=5)
 
 @dataclass
 class ViCareSwitchEntityDescription(SwitchEntityDescription, ViCareRequiredKeysMixin, ViCareToggleKeysMixin):
@@ -84,7 +88,7 @@ class ViCareSwitch(SwitchEntity):
         self.entity_description = description
         self._device_config = device_config
         self._api = api
-        self._ignore_update_until = 0
+        self._ignore_update_until = datetime.datetime.utcnow()
         self._state = None
 
     @property
@@ -95,15 +99,17 @@ class ViCareSwitch(SwitchEntity):
 
     async def async_update(self):
         """update internal state"""
-        now = time.time()
+        now = datetime.datetime.utcnow()
         """we have identified that the API does not directly sync the represented state, therefore we want to keep
         an assumed state for a couple of seconds - so lets ignore an update
         """
         if now < self._ignore_update_until:
+            _LOGGER.debug("Ignoring Update Request for OneTime Charging for some seconds")
             return
 
         try:
             with suppress(PyViCareNotSupportedFeatureError):
+                _LOGGER.debug("Fetching DHW One Time Charging Status")
                 self._state = await self.hass.async_add_executor_job(self.entity_description.value_getter, self._api)
         except requests.exceptions.ConnectionError:
             _LOGGER.error("Unable to retrieve data from ViCare server")
@@ -120,8 +126,9 @@ class ViCareSwitch(SwitchEntity):
         try:
             with suppress(PyViCareNotSupportedFeatureError):
                 """Turn the switch on."""
+                _LOGGER.debug("Enabling DHW One-Time-Charging")
                 await self.hass.async_add_executor_job(self.entity_description.enabler, self._api)
-                self._ignore_update_until = time.time() + IGNORE_FOR_SECONDS
+                self._ignore_update_until = datetime.datetime.utcnow() + TIMEDELTA_UPDATE
                 self._state = True
 
         except requests.exceptions.ConnectionError:
@@ -137,9 +144,9 @@ class ViCareSwitch(SwitchEntity):
         """Handle the button press."""
         try:
             with suppress(PyViCareNotSupportedFeatureError):
+                _LOGGER.debug("Disabling DHW One-Time-Charging")
                 await self.hass.async_add_executor_job(self.entity_description.disabler, self._api)
-                
-                self._ignore_update_until = time.time() + IGNORE_FOR_SECONDS
+                self._ignore_update_until = datetime.datetime.utcnow() + TIMEDELTA_UPDATE
                 self._state = False
 
         except requests.exceptions.ConnectionError:
@@ -151,6 +158,7 @@ class ViCareSwitch(SwitchEntity):
         except PyViCareInvalidDataError as invalid_data_exception:
             _LOGGER.error("Invalid data from Vicare server: %s", invalid_data_exception)
 
+        
     @property
     def device_info(self) -> DeviceInfo:
         """Return device info for this device."""
