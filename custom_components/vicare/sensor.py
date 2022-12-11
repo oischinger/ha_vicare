@@ -446,6 +446,31 @@ GLOBAL_SENSORS: tuple[ViCareSensorEntityDescription, ...] = (
         device_class=SensorDeviceClass.ENERGY,
         state_class=SensorStateClass.TOTAL_INCREASING,
     ),
+    ViCareSensorEntityDescription(
+        key="power consumption dhw today",
+        name="Energy consumption of hot water heating today",
+        native_unit_of_measurement=ENERGY_KILO_WATT_HOUR,
+        value_getter=lambda api: api.getPowerConsumptionDomesticHotWaterToday(),
+        unit_getter=lambda api: api.getPowerConsumptionUnit(),
+        device_class=SensorDeviceClass.ENERGY,
+        state_class=SensorStateClass.TOTAL_INCREASING,
+    ),
+    ViCareSensorEntityDescription(
+        key="buffer main temperature",
+        name="Buffer Main Temperature",
+        native_unit_of_measurement=TEMP_CELSIUS,
+        value_getter=lambda api: api.getBufferMainTemperature(),
+        device_class=SensorDeviceClass.TEMPERATURE,
+        state_class=SensorStateClass.MEASUREMENT,
+    ),
+    ViCareSensorEntityDescription(
+        key="buffer top temperature",
+        name="Buffer Top Temperature",
+        native_unit_of_measurement=TEMP_CELSIUS,
+        value_getter=lambda api: api.getBufferTopTemperature(),
+        device_class=SensorDeviceClass.TEMPERATURE,
+        state_class=SensorStateClass.MEASUREMENT,
+    ),
 )
 
 CIRCUIT_SENSORS: tuple[ViCareSensorEntityDescription, ...] = (
