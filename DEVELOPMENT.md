@@ -5,6 +5,14 @@ This custom component repository is unrelated to the [Home Assistant Core](https
 
 Most of the times it is some commits ahead of the core repository.
 
+# Creating a PR
+
+To create a PR to this repository please install this commit hook:
+```
+python3 -m pip install pre-commit
+pre-commit install
+```
+
 # HA Core development
 
 Make sure to setup the development environment like as described [here](https://developers.home-assistant.io/docs/development_environment).

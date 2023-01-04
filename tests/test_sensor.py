@@ -1,20 +1,20 @@
 """Test the ViCare config flow."""
 
-import pytest
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import MagicMock
 
 from homeassistant.components.sensor import SensorDeviceClass
 from homeassistant.const import ATTR_DEVICE_CLASS, ATTR_FRIENDLY_NAME
 from homeassistant.core import HomeAssistant
 
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from tests.common import MockConfigEntry
+
 
 async def test_outside_temperature(
     hass: HomeAssistant,
-    entity_registry_enabled_by_default: AsyncMock,
+    mock_vicare_gas_boiler: MagicMock,
     init_integration: MockConfigEntry,
-    mock_vicare: MagicMock,
 ) -> None:
+    """Test Outside temperature sensor."""
     state = hass.states.get("sensor.vicare_outside_temperature")
     assert state
     assert state.attributes.get(ATTR_DEVICE_CLASS) == SensorDeviceClass.TEMPERATURE
