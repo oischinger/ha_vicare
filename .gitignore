@@ -1,2 +1,10 @@
 .vscode
 *.code-workspace
+*.pyc
+*.swp
+__pycache__
+env
+.mypy_cache
+.coverage
+coverage.xml
+.secrets

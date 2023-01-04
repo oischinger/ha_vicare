@@ -1,0 +1,20 @@
+name: Python package
+
+on: [push]
+
+jobs:
+    test:
+      runs-on: "ubuntu-latest"
+      steps:
+        - uses: "actions/checkout@v2"
+  
+        - name: Set up Python 3.9
+          uses: actions/setup-python@v2.2.2
+          with:
+            python-version: 3.9
+        
+        - name: Install dependencies
+          run: pip install -r requirements_test.txt
+        
+        - name: pytest
+          run: pytest
