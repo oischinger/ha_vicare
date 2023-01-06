@@ -19,3 +19,4 @@ async def test_outside_temperature(
     assert state
     assert state.attributes.get(ATTR_DEVICE_CLASS) == SensorDeviceClass.TEMPERATURE
     assert state.attributes.get(ATTR_FRIENDLY_NAME) == "ViCare Outside Temperature"
+    assert state.state == "20.8"

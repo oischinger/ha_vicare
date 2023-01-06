@@ -28,9 +28,10 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from .const import (
     CONF_HEATING_TYPE,
     DOMAIN,
-    VICARE_API,
+    HEATING_TYPE_TO_CREATOR_METHOD,
     VICARE_DEVICE_CONFIG,
     VICARE_NAME,
+    HeatingType,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -82,22 +83,28 @@ async def async_setup_entry(
     """Set up the ViCare climate platform."""
     name = VICARE_NAME
     entities = []
-    api = hass.data[DOMAIN][config_entry.entry_id][VICARE_API]
-    circuits = await hass.async_add_executor_job(_get_circuits, api)
 
-    for circuit in circuits:
-        suffix = ""
-        if len(circuits) > 1:
-            suffix = f" {circuit.id}"
+    for device in hass.data[DOMAIN][config_entry.entry_id][VICARE_DEVICE_CONFIG]:
+        api = getattr(
+            device,
+            HEATING_TYPE_TO_CREATOR_METHOD[
+                HeatingType(config_entry.data[CONF_HEATING_TYPE])
+            ],
+        )()
 
-        entity = ViCareWater(
-            f"{name} Water{suffix}",
-            api,
-            circuit,
-            hass.data[DOMAIN][config_entry.entry_id][VICARE_DEVICE_CONFIG],
-            config_entry.data[CONF_HEATING_TYPE],
-        )
-        entities.append(entity)
+        circuits = await hass.async_add_executor_job(_get_circuits, api)
+        for circuit in circuits:
+            suffix = ""
+            if len(circuits) > 1:
+                suffix = f" {circuit.id}"
+            entity = ViCareWater(
+                f"{name} Water{suffix}",
+                api,
+                circuit,
+                device,
+                config_entry.data[CONF_HEATING_TYPE],
+            )
+            entities.append(entity)
 
     async_add_entities(entities)
 
@@ -149,14 +156,21 @@ class ViCareWater(WaterHeaterEntity):
     @property
     def unique_id(self) -> str:
         """Return unique ID for this device."""
-        return f"{self._device_config.getConfig().serial}-{self._circuit.id}"
+        return f"{self._device_config.getConfig().serial}-{self._device_config.getId()}-{self._circuit.id}"
 
     @property
     def device_info(self) -> DeviceInfo:
         """Return device info for this device."""
         return DeviceInfo(
-            identifiers={(DOMAIN, self._device_config.getConfig().serial)},
-            name=self._device_config.getModel(),
+            identifiers={
+                (
+                    DOMAIN,
+                    self._device_config.getConfig().serial
+                    + "-"
+                    + self._device_config.getId(),
+                )
+            },
+            name=self._device_config.getModel() + "-" + self._device_config.getId(),
             manufacturer="Viessmann",
             model=self._device_config.getModel(),
             configuration_url="https://developer.viessmann.com/",

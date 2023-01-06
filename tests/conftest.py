@@ -31,11 +31,13 @@ def readJson(fileName):
 class MockPyViCare:
     """Mocked PyVicare class based on a json dump."""
 
-    def __init__(self, fixture) -> None:
+    def __init__(self, fixtures) -> None:
         """Init a single device from json dump."""
-        self.devices = [
-            PyViCareDeviceConfig(ViCareServiceMock(fixture), "Vitodens", "online")
-        ]
+        self.devices = []
+        for fixture in fixtures:
+            self.devices.append(
+                PyViCareDeviceConfig(ViCareServiceMock(fixture), "Vitodens", "online")
+            )
 
     def initWithCredentials(
         self, username: str, password: str, client_id: str, token_file: str
@@ -47,13 +49,10 @@ class MockPyViCare:
 class ViCareServiceMock:
     """PyVicareService mock using a json dump."""
 
-    def __init__(self, filename, rawInput=None):
+    def __init__(self, fixture):
         """Initialize the mock from a json dump."""
-        if rawInput is None:
-            testData = readJson(filename)
-            self.testData = testData
-        else:
-            self.testData = rawInput
+        testData = readJson(fixture)
+        self.testData = testData
 
         self.accessor = ViCareDeviceAccessor("[id]", "[serial]", "[deviceid]")
         self.setPropertyData = []
@@ -61,7 +60,9 @@ class ViCareServiceMock:
     def getProperty(self, property_name):
         """Read a property from a json dump."""
         entities = self.testData["data"]
-        return readFeature(entities, property_name)
+        value = readFeature(entities, property_name)
+        print("Read: ", property_name, value)
+        return value
 
     def setProperty(self, property_name, action, data):
         """Set a property to its internal data structure."""
@@ -80,6 +81,7 @@ def mock_config_entry() -> MockConfigEntry:
     """Return the default mocked config entry."""
     return MockConfigEntry(
         domain=DOMAIN,
+        unique_id="ViCare",
         data=ENTRY_CONFIG,
     )
 
@@ -98,14 +100,12 @@ async def init_integration(
 
 
 @pytest.fixture
-def mock_vicare_gas_boiler() -> Generator[MagicMock, None, None]:
+async def mock_vicare_gas_boiler() -> Generator[MagicMock, None, None]:
     """Return a mocked ViCare API representing a gas boiler device."""
+    fixtures = ["fixtures/Vitodens300W.json"]
     with patch(
         "homeassistant.components.vicare.vicare_login",
-        return_value=MockPyViCare("fixtures/Vitodens300W.json"),
-    ), patch(
-        "PyViCare.PyViCareCachedService",
-        return_value=ViCareServiceMock("fixtures/Vitodens300W.json"),
+        return_value=MockPyViCare(fixtures),
     ) as vicare_mock:
         vicare = vicare_mock.return_value
         yield vicare
