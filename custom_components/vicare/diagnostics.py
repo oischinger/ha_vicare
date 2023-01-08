@@ -18,12 +18,18 @@ async def async_get_config_entry_diagnostics(
     hass: HomeAssistant, entry: ConfigEntry
 ) -> dict[str, Any]:
     """Return diagnostics for a config entry."""
-    # Currently we only support a single device
-    device = hass.data[DOMAIN][entry.entry_id][VICARE_DEVICE_CONFIG]
-    data: dict[str, Any] = json.loads(
-        await hass.async_add_executor_job(device.dump_secure)
-    )
+    device_dumps = await hass.async_add_executor_job(dump_device_state, hass, entry)
+
     return {
         "entry": async_redact_data(entry.as_dict(), TO_REDACT),
-        "data": data,
+        "data": device_dumps,
     }
+
+
+def dump_device_state(hass: HomeAssistant, entry: ConfigEntry):
+    """Dump devices state to dict."""
+    devices = hass.data[DOMAIN][entry.entry_id][VICARE_DEVICE_CONFIG]
+    device_dumps = dict[str, Any]()
+    for device in devices:
+        device_dumps[device.getId()] = json.loads(device.dump_secure())
+    return device_dumps
