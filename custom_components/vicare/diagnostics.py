@@ -10,6 +10,7 @@ from homeassistant.const import CONF_CLIENT_ID, CONF_PASSWORD, CONF_USERNAME
 from homeassistant.core import HomeAssistant
 
 from .const import DOMAIN, VICARE_DEVICE_CONFIG
+from .helpers import get_unique_device_id
 
 TO_REDACT = {CONF_CLIENT_ID, CONF_PASSWORD, CONF_USERNAME}
 
@@ -31,5 +32,5 @@ def dump_device_state(hass: HomeAssistant, entry: ConfigEntry):
     devices = hass.data[DOMAIN][entry.entry_id][VICARE_DEVICE_CONFIG]
     device_dumps = dict[str, Any]()
     for device in devices:
-        device_dumps[device.getId()] = json.loads(device.dump_secure())
+        device_dumps[get_unique_device_id(device)] = json.loads(device.dump_secure())
     return device_dumps

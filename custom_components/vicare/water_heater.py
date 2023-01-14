@@ -33,6 +33,7 @@ from .const import (
     VICARE_NAME,
     HeatingType,
 )
+from .helpers import get_device_name, get_unique_device_id, get_unique_id
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -156,7 +157,7 @@ class ViCareWater(WaterHeaterEntity):
     @property
     def unique_id(self) -> str:
         """Return unique ID for this device."""
-        return f"{self._device_config.getConfig().serial}-{self._device_config.getId()}-{self._circuit.id}"
+        return get_unique_id(self._api, self._device_config, self._circuit.id)
 
     @property
     def device_info(self) -> DeviceInfo:
@@ -165,12 +166,10 @@ class ViCareWater(WaterHeaterEntity):
             identifiers={
                 (
                     DOMAIN,
-                    self._device_config.getConfig().serial
-                    + "-"
-                    + self._device_config.getId(),
+                    get_unique_device_id(self._device_config),
                 )
             },
-            name=self._device_config.getModel() + "-" + self._device_config.getId(),
+            name=get_device_name(self._device_config),
             manufacturer="Viessmann",
             model=self._device_config.getModel(),
             configuration_url="https://developer.viessmann.com/",

@@ -15,6 +15,7 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.storage import STORAGE_DIR
 
 from .const import DEFAULT_SCAN_INTERVAL, DOMAIN, PLATFORMS, VICARE_DEVICE_CONFIG
+from .helpers import get_unique_device_id
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -59,7 +60,7 @@ async def _async_migrate_entries(
         def update_unique_id(entry: er.RegistryEntry) -> dict[str, str] | None:
             new_unique_id = entry.unique_id.replace(
                 f"{devices[0].getConfig().serial}-",
-                f"{devices[0].getConfig().serial}-{devices[0].getId()}-",
+                f"{get_unique_device_id(devices[0])}-",
             )
             _LOGGER.debug(
                 "Migrating entity '%s' unique_id from '%s' to '%s'",
