@@ -3,7 +3,6 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass
-import logging
 
 from PyViCare.PyViCare import PyViCare
 from PyViCare.PyViCareDevice import Device
@@ -23,8 +22,9 @@ from .const import (
     VICARE_DEVICE_CONFIG,
     HeatingType,
 )
+from . import helpers
 
-_LOGGER = logging.getLogger(__name__)
+_LOGGER = helpers.getLogger(__name__)
 
 
 @dataclass()

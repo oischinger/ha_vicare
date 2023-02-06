@@ -3,7 +3,6 @@ from __future__ import annotations
 
 from contextlib import suppress
 from dataclasses import dataclass
-import logging
 
 from PyViCare.PyViCareUtils import (
     PyViCareInvalidDataError,
@@ -20,8 +19,9 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import ViCareRequiredKeysMixinWithSet
 from .const import DOMAIN, VICARE_API, VICARE_DEVICE_CONFIG, VICARE_NAME
+from . import helpers
 
-_LOGGER = logging.getLogger(__name__)
+_LOGGER = helpers.getLogger(__name__)
 
 BUTTON_DHW_ACTIVATE_ONETIME_CHARGE = "activate_onetimecharge"
 

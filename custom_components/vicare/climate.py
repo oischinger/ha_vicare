@@ -2,8 +2,7 @@
 from __future__ import annotations
 
 from contextlib import suppress
-import logging
-from typing import Any
+from typing import Any, TYPE_CHECKING
 
 from PyViCare.PyViCareUtils import (
     PyViCareCommandError,
@@ -43,8 +42,9 @@ from .const import (
     VICARE_DEVICE_CONFIG,
     VICARE_NAME,
 )
+from . import helpers
 
-_LOGGER = logging.getLogger(__name__)
+_LOGGER = helpers.getLogger(__name__)
 
 SERVICE_SET_VICARE_MODE = "set_vicare_mode"
 SERVICE_SET_VICARE_MODE_ATTR_MODE = "vicare_mode"
@@ -99,8 +99,11 @@ HA_TO_VICARE_PRESET_HEATING = {
     PRESET_NONE: VICARE_PROGRAM_NORMAL,
 }
 
+if TYPE_CHECKING:
+    from PyViCare import PyViCareDevice, PyViCareDeviceConfig
 
-def _get_circuits(vicare_api):
+
+def _get_circuits(vicare_api: 'PyViCareDevice.Device'):
     """Return the list of circuits."""
     try:
         return vicare_api.circuits
@@ -117,7 +120,7 @@ async def async_setup_entry(
     """Set up the ViCare climate platform."""
     name = VICARE_NAME
     entities = []
-    api = hass.data[DOMAIN][config_entry.entry_id][VICARE_API]
+    api: 'PyViCareDevice.Device' = hass.data[DOMAIN][config_entry.entry_id][VICARE_API]
     circuits = await hass.async_add_executor_job(_get_circuits, api)
 
     for circuit in circuits:
@@ -163,7 +166,14 @@ class ViCareClimate(ClimateEntity):
     )
     _attr_temperature_unit = TEMP_CELSIUS
 
-    def __init__(self, name, api, circuit, device_config, heating_type):
+    def __init__(
+        self,
+        name,
+        api: 'PyViCareDevice.Device',
+        circuit: 'PyViCareDevice.HeatingCircuit',
+        device_config: 'PyViCareDeviceConfig.PyViCareDeviceConfig',
+        heating_type
+    ):
         """Initialize the climate device."""
         self._name = name
         self._state = None

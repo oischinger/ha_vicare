@@ -4,7 +4,6 @@ from __future__ import annotations
 from collections.abc import Callable
 from contextlib import suppress
 from dataclasses import dataclass
-import logging
 
 from PyViCare.PyViCareDevice import Device
 from PyViCare.PyViCareUtils import (
@@ -42,8 +41,9 @@ from .const import (
     VICARE_UNIT_TO_DEVICE_CLASS,
     VICARE_UNIT_TO_UNIT_OF_MEASUREMENT,
 )
+from . import helpers
 
-_LOGGER = logging.getLogger(__name__)
+_LOGGER = helpers.getLogger(__name__)
 
 
 @dataclass
