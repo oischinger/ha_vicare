@@ -5,20 +5,14 @@ from contextlib import suppress
 from dataclasses import dataclass
 import logging
 
-from PyViCare.PyViCareUtils import (
-    PyViCareInvalidDataError,
-    PyViCareNotSupportedFeatureError,
-    PyViCareRateLimitError,
-)
-import requests
-
+from PyViCare.PyViCareUtils import PyViCareNotSupportedFeatureError
 from homeassistant.components.button import ButtonEntity, ButtonEntityDescription
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.entity import DeviceInfo, EntityCategory
+from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from . import ViCareRequiredKeysMixinWithSet
+from . import ViCareEntity, ViCareRequiredKeysMixinWithSet, managed_exceptions
 from .const import DOMAIN, VICARE_API, VICARE_DEVICE_CONFIG, VICARE_NAME
 
 _LOGGER = logging.getLogger(__name__)
@@ -47,23 +41,23 @@ BUTTON_DESCRIPTIONS: tuple[ViCareButtonEntityDescription, ...] = (
 
 def _build_entity(name, vicare_api, device_config, description):
     """Create a ViCare button entity."""
-    _LOGGER.debug("Found device %s", name)
-    try:
-        description.value_getter(vicare_api)
-        _LOGGER.debug("Found entity %s", name)
-    except PyViCareNotSupportedFeatureError:
-        _LOGGER.info("Feature not supported %s", name)
-        return None
-    except AttributeError:
-        _LOGGER.debug("Attribute Error %s", name)
-        return None
-
-    return ViCareButton(
-        name,
-        vicare_api,
-        device_config,
-        description,
-    )
+    with managed_exceptions(_LOGGER):
+        _LOGGER.debug("Found device %s", name)
+        try:
+            description.value_getter(vicare_api)
+            _LOGGER.debug("Found entity %s", name)
+            return ViCareButton(
+                name,
+                vicare_api,
+                device_config,
+                description,
+            )
+        except PyViCareNotSupportedFeatureError:
+            _LOGGER.info("Feature not supported %s", name)
+            return None
+        except AttributeError:
+            _LOGGER.debug("Attribute Error %s", name)
+            return None
 
 
 async def async_setup_entry(
@@ -91,8 +85,9 @@ async def async_setup_entry(
     async_add_entities(entities)
 
 
-class ViCareButton(ButtonEntity):
+class ViCareButton(ViCareEntity, ButtonEntity):
     """Representation of a ViCare button."""
+    _logger = _LOGGER
 
     entity_description: ViCareButtonEntityDescription
 
@@ -106,28 +101,9 @@ class ViCareButton(ButtonEntity):
 
     def press(self) -> None:
         """Handle the button press."""
-        try:
+        with managed_exceptions(_LOGGER):
             with suppress(PyViCareNotSupportedFeatureError):
                 self.entity_description.value_setter(self._api)
-        except requests.exceptions.ConnectionError:
-            _LOGGER.error("Unable to retrieve data from ViCare server")
-        except ValueError:
-            _LOGGER.error("Unable to decode data from ViCare server")
-        except PyViCareRateLimitError as limit_exception:
-            _LOGGER.error("Vicare API rate limit exceeded: %s", limit_exception)
-        except PyViCareInvalidDataError as invalid_data_exception:
-            _LOGGER.error("Invalid data from Vicare server: %s", invalid_data_exception)
-
-    @property
-    def device_info(self) -> DeviceInfo:
-        """Return device info for this device."""
-        return DeviceInfo(
-            identifiers={(DOMAIN, self._device_config.getConfig().serial)},
-            name=self._device_config.getModel(),
-            manufacturer="Viessmann",
-            model=self._device_config.getModel(),
-            configuration_url="https://developer.viessmann.com/",
-        )
 
     @property
     def unique_id(self) -> str:

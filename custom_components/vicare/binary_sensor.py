@@ -5,13 +5,7 @@ from contextlib import suppress
 from dataclasses import dataclass
 import logging
 
-from PyViCare.PyViCareUtils import (
-    PyViCareInvalidDataError,
-    PyViCareNotSupportedFeatureError,
-    PyViCareRateLimitError,
-)
-import requests
-
+from PyViCare.PyViCareUtils import PyViCareNotSupportedFeatureError
 from homeassistant.components.binary_sensor import (
     BinarySensorDeviceClass,
     BinarySensorEntity,
@@ -19,10 +13,9 @@ from homeassistant.components.binary_sensor import (
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from . import ViCareRequiredKeysMixin
+from . import ViCareEntity, ViCareRequiredKeysMixin, managed_exceptions
 from .const import DOMAIN, VICARE_API, VICARE_DEVICE_CONFIG, VICARE_NAME
 
 _LOGGER = logging.getLogger(__name__)
@@ -98,22 +91,22 @@ GLOBAL_SENSORS: tuple[ViCareBinarySensorEntityDescription, ...] = (
 
 def _build_entity(name, vicare_api, device_config, sensor):
     """Create a ViCare binary sensor entity."""
-    try:
-        sensor.value_getter(vicare_api)
-        _LOGGER.debug("Found entity %s", name)
-    except PyViCareNotSupportedFeatureError:
-        _LOGGER.info("Feature not supported %s", name)
-        return None
-    except AttributeError:
-        _LOGGER.debug("Attribute Error %s", name)
-        return None
-
-    return ViCareBinarySensor(
-        name,
-        vicare_api,
-        device_config,
-        sensor,
-    )
+    with managed_exceptions(_LOGGER):
+        try:
+            sensor.value_getter(vicare_api)
+            _LOGGER.debug("Found entity %s", name)
+            return ViCareBinarySensor(
+                name,
+                vicare_api,
+                device_config,
+                sensor,
+            )
+        except PyViCareNotSupportedFeatureError:
+            _LOGGER.info("Feature not supported %s", name)
+            return None
+        except AttributeError:
+            _LOGGER.debug("Attribute Error %s", name)
+            return None
 
 
 async def _entities_from_descriptions(
@@ -182,8 +175,9 @@ async def async_setup_entry(
     async_add_entities(entities)
 
 
-class ViCareBinarySensor(BinarySensorEntity):
+class ViCareBinarySensor(ViCareEntity, BinarySensorEntity):
     """Representation of a ViCare sensor."""
+    _logger = _LOGGER
 
     entity_description: ViCareBinarySensorEntityDescription
 
@@ -197,17 +191,6 @@ class ViCareBinarySensor(BinarySensorEntity):
         self.entity_description = description
         self._device_config = device_config
         self._state = None
-
-    @property
-    def device_info(self) -> DeviceInfo:
-        """Return device info for this device."""
-        return DeviceInfo(
-            identifiers={(DOMAIN, self._device_config.getConfig().serial)},
-            name=self._device_config.getModel(),
-            manufacturer="Viessmann",
-            model=self._device_config.getModel(),
-            configuration_url="https://developer.viessmann.com/",
-        )
 
     @property
     def available(self):
@@ -229,16 +212,7 @@ class ViCareBinarySensor(BinarySensorEntity):
         """Return the state of the sensor."""
         return self._state
 
-    def update(self):
+    def _internal_update(self):
         """Update state of sensor."""
-        try:
-            with suppress(PyViCareNotSupportedFeatureError):
-                self._state = self.entity_description.value_getter(self._api)
-        except requests.exceptions.ConnectionError:
-            _LOGGER.error("Unable to retrieve data from ViCare server")
-        except ValueError:
-            _LOGGER.error("Unable to decode data from ViCare server")
-        except PyViCareRateLimitError as limit_exception:
-            _LOGGER.error("Vicare API rate limit exceeded: %s", limit_exception)
-        except PyViCareInvalidDataError as invalid_data_exception:
-            _LOGGER.error("Invalid data from Vicare server: %s", invalid_data_exception)
+        with suppress(PyViCareNotSupportedFeatureError):
+            self._state = self.entity_description.value_getter(self._api)
