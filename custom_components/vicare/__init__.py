@@ -127,6 +127,9 @@ def setup_vicare_api(hass, entry):
             "Found device: %s (online: %s)", device.getModel(), str(device.isOnline())
         )
 
+    # Readjust scan interval: each device has its own API endpoint
+    vicare_api.setCacheDuration(DEFAULT_SCAN_INTERVAL * len(vicare_api.devices))
+
     hass.data[DOMAIN][entry.entry_id][VICARE_DEVICE_CONFIG] = vicare_api.devices
 
 
