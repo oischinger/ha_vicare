@@ -13,7 +13,7 @@ from . import ENTRY_CONFIG, MOCK_MAC
 
 
 async def test_form(
-    hass: HomeAssistant, mock_setup_entry: bool, mock_vicare_gas_boiler: MagicMock
+    hass: HomeAssistant, mock_setup_entry: bool, mock_vicare_2_gas_boilers: MagicMock
 ):
     """Test we get the form."""
     result = await hass.config_entries.flow.async_init(

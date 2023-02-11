@@ -63,6 +63,10 @@ def readJson(fileName):
 class MockPyViCare:
     """Mocked PyVicare class based on a json dump."""
 
+    def setCacheDuration(self, cache_duration):
+        """Set cache duration to limit # of requests."""
+        self.cacheDuration = int(cache_duration)
+
     def __init__(self, fixtures) -> None:
         """Init a single device from json dump."""
         self.devices = []
@@ -151,7 +155,19 @@ async def init_integration(
 
 @pytest.fixture
 async def mock_vicare_gas_boiler() -> Generator[MagicMock, None, None]:
-    """Return a mocked ViCare API representing a gas boiler device."""
+    """Return a mocked ViCare API representing a single gas boiler device."""
+    fixtures = ["fixtures/Vitodens300W.json"]
+    with patch(
+        f"{MODULE}.vicare_login",
+        return_value=MockPyViCare(fixtures),
+    ) as vicare_mock:
+        vicare = vicare_mock.return_value
+        yield vicare
+
+
+@pytest.fixture
+async def mock_vicare_2_gas_boilers() -> Generator[MagicMock, None, None]:
+    """Return a mocked ViCare API representing two gas boiler devices."""
     fixtures = ["fixtures/Vitodens300W.json", "fixtures/Vitodens300W.json"]
     with patch(
         f"{MODULE}.vicare_login",

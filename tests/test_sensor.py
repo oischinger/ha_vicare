@@ -11,7 +11,7 @@ from tests.common import MockConfigEntry
 
 async def test_outside_temperature(
     hass: HomeAssistant,
-    mock_vicare_gas_boiler: MagicMock,
+    mock_vicare_2_gas_boilers: MagicMock,
     init_integration: MockConfigEntry,
 ) -> None:
     """Test Outside temperature sensor."""
