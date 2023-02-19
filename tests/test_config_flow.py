@@ -1,8 +1,6 @@
 """Test the ViCare config flow."""
 from unittest.mock import MagicMock
 
-from pytest_homeassistant_custom_component.common import MockConfigEntry
-
 from homeassistant import config_entries, data_entry_flow
 from homeassistant.components import dhcp
 from homeassistant.components.vicare.const import DOMAIN
@@ -10,6 +8,8 @@ from homeassistant.const import CONF_CLIENT_ID, CONF_PASSWORD, CONF_USERNAME
 from homeassistant.core import HomeAssistant
 
 from . import ENTRY_CONFIG, MOCK_MAC
+
+from tests.common import MockConfigEntry
 
 
 async def test_form(

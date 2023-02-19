@@ -2,7 +2,7 @@
 import enum
 
 from homeassistant.components.sensor import SensorDeviceClass
-from homeassistant.const import ENERGY_KILO_WATT_HOUR, VOLUME_CUBIC_METERS, Platform
+from homeassistant.const import Platform, UnitOfEnergy, UnitOfVolume
 
 DOMAIN = "vicare"
 
@@ -32,8 +32,8 @@ VICARE_UNIT_TO_DEVICE_CLASS = {
 }
 
 VICARE_UNIT_TO_UNIT_OF_MEASUREMENT = {
-    VICARE_KWH: ENERGY_KILO_WATT_HOUR,
-    VICARE_CUBIC_METER: VOLUME_CUBIC_METERS,
+    VICARE_KWH: UnitOfEnergy.KILO_WATT_HOUR,
+    VICARE_CUBIC_METER: UnitOfVolume.CUBIC_METERS,
 }
 
 

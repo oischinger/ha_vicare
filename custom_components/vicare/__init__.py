@@ -35,7 +35,7 @@ class ViCareRequiredKeysMixinWithSet:
     value_setter: Callable[[Device], bool]
 
 
-async def async_migrate_entry(hass, config_entry: ConfigEntry):
+async def async_migrate_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> bool:
     """Migrate old entry."""
     _LOGGER.debug("Migrating from version %s", config_entry.version)
 
@@ -71,7 +71,7 @@ async def _async_migrate_entries(
             if existing_entity_id := entity_registry.async_get_entity_id(
                 entry.domain, entry.platform, new_unique_id
             ):
-                _LOGGER.warn(
+                _LOGGER.warning(
                     "Cannot migrate to unique_id '%s', already exists for '%s'",
                     new_unique_id,
                     existing_entity_id,
