@@ -36,7 +36,7 @@ import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import CONF_HEATING_TYPE, DOMAIN, VICARE_DEVICE_CONFIG, VICARE_NAME
+from .const import DOMAIN, VICARE_DEVICE_CONFIG, VICARE_NAME
 from .helpers import get_device_name, get_unique_device_id, get_unique_id
 
 _LOGGER = logging.getLogger(__name__)
@@ -127,7 +127,6 @@ async def async_setup_entry(
                 api,
                 circuit,
                 device,
-                config_entry.data[CONF_HEATING_TYPE],
             )
             entities.append(entity)
 
@@ -160,7 +159,7 @@ class ViCareClimate(ClimateEntity):
     )
     _attr_temperature_unit = UnitOfTemperature.CELSIUS
 
-    def __init__(self, name, api, circuit, device_config, heating_type):
+    def __init__(self, name, api, circuit, device_config):
         """Initialize the climate device."""
         self._name = name
         self._state = None
@@ -172,7 +171,6 @@ class ViCareClimate(ClimateEntity):
         self._current_mode = None
         self._current_temperature = None
         self._current_program = None
-        self._heating_type = heating_type
         self._current_action = None
 
     @property

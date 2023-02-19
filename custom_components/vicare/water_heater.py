@@ -25,7 +25,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import CONF_HEATING_TYPE, DOMAIN, VICARE_DEVICE_CONFIG, VICARE_NAME
+from .const import DOMAIN, VICARE_DEVICE_CONFIG, VICARE_NAME
 from .helpers import get_device_name, get_unique_device_id, get_unique_id
 
 _LOGGER = logging.getLogger(__name__)
@@ -86,13 +86,7 @@ async def async_setup_entry(
             suffix = ""
             if len(circuits) > 1:
                 suffix = f" {circuit.id}"
-            entity = ViCareWater(
-                f"{name} Water{suffix}",
-                api,
-                circuit,
-                device,
-                config_entry.data[CONF_HEATING_TYPE],
-            )
+            entity = ViCareWater(f"{name} Water{suffix}", api, circuit, device)
             entities.append(entity)
 
     async_add_entities(entities)
@@ -104,7 +98,7 @@ class ViCareWater(WaterHeaterEntity):
     _attr_precision = PRECISION_TENTHS
     _attr_supported_features = WaterHeaterEntityFeature.TARGET_TEMPERATURE
 
-    def __init__(self, name, api, circuit, device_config, heating_type):
+    def __init__(self, name, api, circuit, device_config):
         """Initialize the DHW water_heater device."""
         self._name = name
         self._state = None
@@ -115,7 +109,6 @@ class ViCareWater(WaterHeaterEntity):
         self._target_temperature = None
         self._current_temperature = None
         self._current_mode = None
-        self._heating_type = heating_type
 
     def update(self) -> None:
         """Let HA know there has been an update from the ViCare API."""
