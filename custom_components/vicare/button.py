@@ -20,14 +20,7 @@ from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import ViCareRequiredKeysMixinWithSet
-from .const import (
-    CONF_HEATING_TYPE,
-    DOMAIN,
-    HEATING_TYPE_TO_CREATOR_METHOD,
-    VICARE_DEVICE_CONFIG,
-    VICARE_NAME,
-    HeatingType,
-)
+from .const import DOMAIN, VICARE_DEVICE_CONFIG, VICARE_NAME
 from .helpers import get_device_name, get_unique_device_id, get_unique_id
 
 _LOGGER = logging.getLogger(__name__)
@@ -93,12 +86,7 @@ def create_all_entities(hass: HomeAssistant, config_entry: ConfigEntry):
     entities = []
 
     for device in hass.data[DOMAIN][config_entry.entry_id][VICARE_DEVICE_CONFIG]:
-        api = getattr(
-            device,
-            HEATING_TYPE_TO_CREATOR_METHOD[
-                HeatingType(config_entry.data[CONF_HEATING_TYPE])
-            ],
-        )()
+        api = device.asAutoDetectDevice()
 
         for description in BUTTON_DESCRIPTIONS:
             entity = _build_entity(
