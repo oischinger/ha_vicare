@@ -6,6 +6,7 @@ from dataclasses import dataclass
 import logging
 
 from PyViCare.PyViCareUtils import (
+    PyViCareInternalServerError,
     PyViCareInvalidDataError,
     PyViCareNotSupportedFeatureError,
     PyViCareRateLimitError,
@@ -53,6 +54,11 @@ def _build_entity(name, vicare_api, device_config, description):
     try:
         description.value_getter(vicare_api)
         _LOGGER.debug("Found entity %s", name)
+    except PyViCareInternalServerError as server_error:
+        _LOGGER.info(
+            "Server error ( %s): Not creating entity %s", server_error.message, name
+        )
+        return None
     except PyViCareNotSupportedFeatureError:
         _LOGGER.info("Feature not supported %s", name)
         return None
