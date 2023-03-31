@@ -24,7 +24,7 @@ jobs:
 
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: /home/runner/work/vicare/vicare/custom_components/vicare/vicare.zip
+          file: /home/runner/work/ha_vicare/ha_vicare/custom_components/vicare/vicare.zip
           asset_name: vicare.zip
           tag: ${{ github.ref }}
           overwrite: true
