@@ -1,10 +1,10 @@
 # Unofficial Home Assistant custom component for Viessmann ViCare API
 
-[![GitHub contributors](https://img.shields.io/github/contributors/oischinger/ha_vicare)](https://github.com/thebino/rki_covid/graphs/contributors)
+[![GitHub contributors](https://img.shields.io/github/contributors/oischinger/ha_vicare)](https://github.com/thebino/vicare/graphs/contributors)
 ![Version](https://img.shields.io/github/v/release/oischinger/ha_vicare)
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
 
-The `rki_covid` component is a Home Assistant custom component for monitoring and controlling [Viessmann](https://www.viessmann.family) devices through their cloud-based [ViCare API](https://developer.viessmann.com/start.html).
+The `vicare` component is a Home Assistant custom component for monitoring and controlling [Viessmann](https://www.viessmann.family) devices through their cloud-based [ViCare API](https://developer.viessmann.com/start.html).
 
 ⚠️ **This custom component contains some experimental commits. Use at your own risk**
 
