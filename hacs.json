@@ -1,0 +1,8 @@
+{
+  "name": "ViCare",
+  "zip_release": true,
+  "filename": "vicare.zip",
+  "homeassistant": "2023.3.6",
+  "iot_class": "Cloud Polling",
+  "render_readme": true
+}
