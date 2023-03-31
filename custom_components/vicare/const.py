@@ -2,7 +2,7 @@
 import enum
 
 from homeassistant.components.sensor import SensorDeviceClass
-from homeassistant.const import ENERGY_KILO_WATT_HOUR, VOLUME_CUBIC_METERS, Platform
+from homeassistant.const import Platform, UnitOfEnergy, UnitOfVolume
 
 DOMAIN = "vicare"
 
@@ -19,7 +19,6 @@ VICARE_API = "api"
 VICARE_NAME = "ViCare"
 
 CONF_CIRCUIT = "circuit"
-CONF_HEATING_TYPE = "heating_type"
 
 DEFAULT_SCAN_INTERVAL = 60
 
@@ -32,8 +31,8 @@ VICARE_UNIT_TO_DEVICE_CLASS = {
 }
 
 VICARE_UNIT_TO_UNIT_OF_MEASUREMENT = {
-    VICARE_KWH: ENERGY_KILO_WATT_HOUR,
-    VICARE_CUBIC_METER: VOLUME_CUBIC_METERS,
+    VICARE_KWH: UnitOfEnergy.KILO_WATT_HOUR,
+    VICARE_CUBIC_METER: UnitOfVolume.CUBIC_METERS,
 }
 
 
@@ -50,13 +49,3 @@ class HeatingType(enum.Enum):
 
 
 DEFAULT_HEATING_TYPE = HeatingType.auto
-
-HEATING_TYPE_TO_CREATOR_METHOD = {
-    HeatingType.auto: "asAutoDetectDevice",
-    HeatingType.gas: "asGazBoiler",
-    HeatingType.fuelcell: "asFuelCell",
-    HeatingType.heatpump: "asHeatPump",
-    HeatingType.oil: "asOilBoiler",
-    HeatingType.pellets: "asPelletsBoiler",
-    HeatingType.hybrid: "asHybridDevice",
-}
