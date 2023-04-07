@@ -55,7 +55,7 @@ class MockPyViCare:
     def __init__(self, fixtures: list[str]) -> None:
         """Init a single device from json dump."""
         self.devices = []
-        for idx, fixture in enumerate(fixtures):
+        for idx, (fixture, roles) in enumerate(fixtures.items()):
             self.devices.append(
                 PyViCareDeviceConfig(
                     ViCareServiceMock(
@@ -63,7 +63,7 @@ class MockPyViCare:
                         f"installationId{idx}",
                         f"serial{idx}",
                         f"deviceId{idx}",
-                        ["type:boiler"],
+                        roles,
                     ),
                     f"deviceId{idx}",
                     f"model{idx}",
@@ -138,7 +138,25 @@ async def mock_vicare_gas_boiler(
     hass: HomeAssistant, mock_config_entry: MockConfigEntry
 ) -> Generator[MagicMock, None, None]:
     """Return a mocked ViCare API representing a single gas boiler device."""
-    fixtures = ["vicare/Vitodens300W.json"]
+    fixtures = {"vicare/Vitodens300W.json": ["type:boiler"]}
+    with patch(
+        f"{MODULE}.vicare_login",
+        return_value=MockPyViCare(fixtures),
+    ):
+        mock_config_entry.add_to_hass(hass)
+
+        await hass.config_entries.async_setup(mock_config_entry.entry_id)
+        await hass.async_block_till_done()
+
+        yield mock_config_entry
+
+
+@pytest.fixture
+async def mock_vicare_room_sensor(
+    hass: HomeAssistant, mock_config_entry: MockConfigEntry
+) -> Generator[MagicMock, None, None]:
+    """Return a mocked ViCare API representing a single room sensor device."""
+    fixtures = {"vicare/zigbee_zk03839.json": ["type:climateSensor"]}
     with patch(
         f"{MODULE}.vicare_login",
         return_value=MockPyViCare(fixtures),
