@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from collections.abc import Generator
+from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from PyViCare.PyViCareDeviceConfig import PyViCareDeviceConfig
@@ -11,6 +12,8 @@ from PyViCare.PyViCareService import (
     readFeature,
 )
 import pytest
+from syrupy.extensions.amber import AmberSnapshotExtension
+from syrupy.location import PyTestLocation
 
 from homeassistant.components.vicare.const import DOMAIN
 from homeassistant.core import HomeAssistant
@@ -19,6 +22,23 @@ from homeassistant.util.json import json_loads_object
 from . import ENTRY_CONFIG, MODULE
 
 from tests.common import MockConfigEntry, load_fixture
+
+DIFFERENT_DIRECTORY = "__snapshots__"
+
+
+class DifferentDirectoryExtension(AmberSnapshotExtension):
+    """Directory extension to ensure correct loading of snapshots."""
+
+    @classmethod
+    def dirname(cls, *, test_location: PyTestLocation) -> str:
+        """Provide path to snapshots."""
+        return str(Path(test_location.filepath).parent.joinpath(DIFFERENT_DIRECTORY))
+
+
+@pytest.fixture
+def snapshot(snapshot):
+    """Syrupy snapshot using proper path."""
+    return snapshot.use_extension(DifferentDirectoryExtension)
 
 
 # This fixture enables loading custom integrations in all tests.
