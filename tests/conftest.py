@@ -132,6 +132,24 @@ async def mock_vicare_gas_boiler(
 
 
 @pytest.fixture
+async def mock_vicare_2_gas_boilers(
+    hass: HomeAssistant, mock_config_entry: MockConfigEntry
+) -> Generator[MagicMock, None, None]:
+    """Return a mocked ViCare API representing a single gas boiler device."""
+    fixtures = ["vicare/Vitodens300W.json", "vicare/Vitodens300W.json"]
+    with patch(
+        f"{MODULE}.vicare_login",
+        return_value=MockPyViCare(fixtures),
+    ):
+        mock_config_entry.add_to_hass(hass)
+
+        await hass.config_entries.async_setup(mock_config_entry.entry_id)
+        await hass.async_block_till_done()
+
+        yield mock_config_entry
+
+
+@pytest.fixture
 def mock_setup_entry() -> Generator[AsyncMock, None, None]:
     """Mock setting up a config entry."""
     with patch(f"{MODULE}.async_setup_entry", return_value=True) as mock_setup_entry:

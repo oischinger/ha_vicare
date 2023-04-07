@@ -8,6 +8,7 @@ from syrupy.assertion import SnapshotAssertion
 from homeassistant.core import HomeAssistant
 
 
+@pytest.mark.freeze_time("2022-04-19 07:53:05")
 @pytest.mark.parametrize(
     "entity_id",
     [

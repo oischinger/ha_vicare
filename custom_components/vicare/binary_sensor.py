@@ -216,7 +216,7 @@ class ViCareBinarySensor(BinarySensorEntity):
         self._api = api
         self.entity_description = description
         self._device_config = device_config
-        self._state = None
+        self.update()
 
     @property
     def device_info(self) -> DeviceInfo:

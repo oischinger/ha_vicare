@@ -1,0 +1,19 @@
+# serializer version: 1
+# name: test_binary_sensors[sensor.vicare_burner_active]
+  None
+# ---
+# name: test_binary_sensors[sensor.vicare_circulation_pump_active]
+  None
+# ---
+# name: test_binary_sensors[sensor.vicare_dhw_charging_active]
+  None
+# ---
+# name: test_binary_sensors[sensor.vicare_dhw_circulation_pump_active]
+  None
+# ---
+# name: test_binary_sensors[sensor.vicare_dhw_pump_active]
+  None
+# ---
+# name: test_binary_sensors[sensor.vicare_frost_protection_active]
+  None
+# ---

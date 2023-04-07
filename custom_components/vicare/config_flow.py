@@ -46,7 +46,6 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 )
             except PyViCareInvalidCredentialsError:
                 errors["base"] = "invalid_auth"
-                return self.async_abort(reason="invalid_auth")
             else:
                 return self.async_create_entry(title=VICARE_NAME, data=user_input)
 
