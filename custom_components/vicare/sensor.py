@@ -56,22 +56,6 @@ class ViCareSensorEntityDescription(SensorEntityDescription, ViCareRequiredKeysM
 
 GLOBAL_SENSORS: tuple[ViCareSensorEntityDescription, ...] = (
     ViCareSensorEntityDescription(
-        key="temperature",
-        name="Temperature",
-        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
-        value_getter=lambda api: api.getTemperature(),
-        device_class=SensorDeviceClass.TEMPERATURE,
-        state_class=SensorStateClass.MEASUREMENT,
-    ),
-    ViCareSensorEntityDescription(
-        key="humidity",
-        name="Humidity",
-        icon="mdi:percent",
-        native_unit_of_measurement=PERCENTAGE,
-        value_getter=lambda api: api.getHumidity(),
-        state_class=SensorStateClass.MEASUREMENT,
-    ),
-    ViCareSensorEntityDescription(
         key="outside_temperature",
         name="Outside Temperature",
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
@@ -486,6 +470,22 @@ GLOBAL_SENSORS: tuple[ViCareSensorEntityDescription, ...] = (
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
         value_getter=lambda api: api.getBufferTopTemperature(),
         device_class=SensorDeviceClass.TEMPERATURE,
+        state_class=SensorStateClass.MEASUREMENT,
+    ),
+    ViCareSensorEntityDescription(
+        key="room_temperature",
+        name="Room Temperature",
+        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
+        value_getter=lambda api: api.getTemperature(),
+        device_class=SensorDeviceClass.TEMPERATURE,
+        state_class=SensorStateClass.MEASUREMENT,
+    ),
+    ViCareSensorEntityDescription(
+        key="room_humidity",
+        name="Room Humidity",
+        icon="mdi:percent",
+        native_unit_of_measurement=PERCENTAGE,
+        value_getter=lambda api: api.getHumidity(),
         state_class=SensorStateClass.MEASUREMENT,
     ),
 )
