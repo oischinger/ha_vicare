@@ -1,28 +1,44 @@
-"""Test the ViCare config flow."""
+"""Test ViCare sensors."""
 
 from unittest.mock import MagicMock
 
-from homeassistant.components.sensor import SensorDeviceClass
-from homeassistant.const import ATTR_DEVICE_CLASS, ATTR_FRIENDLY_NAME
+import pytest
+from syrupy.assertion import SnapshotAssertion
+
 from homeassistant.core import HomeAssistant
 
-from tests.common import MockConfigEntry
 
-
-async def test_outside_temperature(
+@pytest.mark.freeze_time("2022-04-19 07:53:05")
+@pytest.mark.parametrize(
+    "entity_id",
+    [
+        "sensor.vicare_outside_temperature",
+        "sensor.vicare_boiler_temperature",
+        "sensor.vicare_hot_water_max_temperature",
+        "sensor.vicare_hot_water_min_temperature",
+        "sensor.vicare_burner_hours",
+        "sensor.vicare_burner_modulation",
+        "sensor.vicare_burner_starts",
+        "sensor.vicare_energy_consumption_this_month",
+        "sensor.vicare_energy_consumption_this_year",
+        "sensor.vicare_energy_consumption_today",
+        "sensor.vicare_heating_gas_consumption_this_month",
+        "sensor.vicare_heating_gas_consumption_this_week",
+        "sensor.vicare_heating_gas_consumption_this_year",
+        "sensor.vicare_heating_gas_consumption_today",
+        "sensor.vicare_hot_water_gas_consumption_this_month",
+        "sensor.vicare_hot_water_gas_consumption_this_week",
+        "sensor.vicare_hot_water_gas_consumption_this_year",
+        "sensor.vicare_hot_water_gas_consumption_today",
+        "sensor.vicare_power_consumption_this_week",
+    ],
+)
+async def test_gas_boiler_sensors(
     hass: HomeAssistant,
-    mock_vicare_2_gas_boilers: MagicMock,
-    init_integration: MockConfigEntry,
+    mock_vicare_gas_boiler: MagicMock,
+    snapshot: SnapshotAssertion,
+    entity_id: str,
 ) -> None:
-    """Test Outside temperature sensor."""
-    state = hass.states.get("sensor.vicare_outside_temperature")
-    assert state
-    assert state.attributes.get(ATTR_DEVICE_CLASS) == SensorDeviceClass.TEMPERATURE
-    assert state.attributes.get(ATTR_FRIENDLY_NAME) == "ViCare Outside Temperature"
-    # TODO: I don't understand why below assert fails. State is always unknown
-    # assert state.state == "20.8"
-
-    state = hass.states.get("sensor.vicare_outside_temperature_2")
-    assert state
-    assert state.attributes.get(ATTR_DEVICE_CLASS) == SensorDeviceClass.TEMPERATURE
-    assert state.attributes.get(ATTR_FRIENDLY_NAME) == "ViCare Outside Temperature"
+    """Test the ViCare Gas Boiler sensors."""
+    state = hass.states.get(entity_id)
+    assert state == snapshot

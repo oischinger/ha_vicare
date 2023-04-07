@@ -703,7 +703,7 @@ class ViCareSensor(SensorEntity):
         self._attr_name = name
         self._api = api
         self._device_config = device_config
-        self._state = None
+        self.update()
 
     @property
     def device_info(self) -> DeviceInfo:
