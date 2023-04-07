@@ -93,6 +93,7 @@ class ViCareServiceMock:
         self.accessor = ViCareDeviceAccessor(inst_id, serial, device_id)
         self.setPropertyData = []
         self.roles = roles
+        self.__cacheDuration = -1
 
     def getProperty(self, property_name: str):
         """Read a property from a json dump."""
