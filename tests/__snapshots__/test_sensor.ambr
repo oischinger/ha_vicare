@@ -57,8 +57,8 @@
   <state sensor.vicare_power_consumption_this_week=0.829; state_class=total_increasing, unit_of_measurement=kWh, device_class=energy, friendly_name=ViCare Power consumption this week @ 2022-04-19T00:53:05-07:00>
 # ---
 # name: test_room_sensor_sensors[sensor.vicare_room_humidity]
-  <state sensor.vicare_room_humidity=56; state_class=measurement, unit_of_measurement=%, icon=mdi:percent, friendly_name=ViCare Room Humidity @ 2023-04-07T14:18:04.246947-07:00>
+  <state sensor.vicare_room_humidity=56; state_class=measurement, unit_of_measurement=%, icon=mdi:percent, friendly_name=ViCare Room Humidity @ 2022-04-19T00:53:05-07:00>
 # ---
 # name: test_room_sensor_sensors[sensor.vicare_room_temperature]
-  <state sensor.vicare_room_temperature=19.7; state_class=measurement, unit_of_measurement=°C, device_class=temperature, friendly_name=ViCare Room Temperature @ 2023-04-07T14:18:04.198195-07:00>
+  <state sensor.vicare_room_temperature=19.7; state_class=measurement, unit_of_measurement=°C, device_class=temperature, friendly_name=ViCare Room Temperature @ 2022-04-19T00:53:05-07:00>
 # ---

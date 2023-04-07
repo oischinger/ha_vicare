@@ -44,6 +44,7 @@ async def test_gas_boiler_sensors(
     assert state == snapshot
 
 
+@pytest.mark.freeze_time("2022-04-19 07:53:05")
 @pytest.mark.parametrize(
     "entity_id",
     [
