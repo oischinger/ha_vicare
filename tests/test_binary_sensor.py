@@ -12,12 +12,12 @@ from homeassistant.core import HomeAssistant
 @pytest.mark.parametrize(
     "entity_id",
     [
-        "sensor.vicare_burner_active",
-        "sensor.vicare_circulation_pump_active",
-        "sensor.vicare_dhw_charging_active",
-        "sensor.vicare_dhw_circulation_pump_active",
-        "sensor.vicare_dhw_pump_active",
-        "sensor.vicare_frost_protection_active",
+        "binary_sensor.vicare_burner_active",
+        "binary_sensor.vicare_circulation_pump_active",
+        "binary_sensor.vicare_dhw_charging_active",
+        "binary_sensor.vicare_dhw_circulation_pump_active",
+        "binary_sensor.vicare_dhw_pump_active",
+        "binary_sensor.vicare_frost_protection_active",
     ],
 )
 async def test_binary_sensors(
