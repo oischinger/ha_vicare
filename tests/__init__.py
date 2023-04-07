@@ -15,7 +15,6 @@ from homeassistant.const import CONF_CLIENT_ID, CONF_PASSWORD, CONF_USERNAME
 MODULE = "custom_components.vicare"
 sys.modules["tests.common"] = pytest_homeassistant_custom_component.common
 
-
 ENTRY_CONFIG: Final[dict[str, str]] = {
     CONF_USERNAME: "foo@bar.com",
     CONF_PASSWORD: "1234",
