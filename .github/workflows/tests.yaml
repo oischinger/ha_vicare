@@ -21,7 +21,7 @@ jobs:
 
       - name: pytest
         run: |
-          pytest --junitxml=pytest.xml --cov-report "xml:coverage.xml" --cov=src tests/
+          pytest --junitxml=pytest.xml --cov-report="xml:coverage.xml" --cov=custom_components/vicare tests/
 
       - name: Pytest coverage comment
         uses: MishaKav/pytest-coverage-comment@main
