@@ -72,6 +72,12 @@ VICARE_HOLD_MODE_OFF = "off"
 VICARE_TEMP_HEATING_MIN = 3
 VICARE_TEMP_HEATING_MAX = 37
 
+VICARE_HEATING_CURVE_SLOPE_MIN = 0.3
+VICARE_HEATING_CURVE_SLOPE_MAX = 3.5
+
+VICARE_HEATING_CURVE_SHIFT_MIN = -13
+VICARE_HEATING_CURVE_SHIFT_MAX = 40
+
 VICARE_TO_HA_HVAC_HEATING = {
     VICARE_MODE_FORCEDREDUCED: HVACMode.OFF,
     VICARE_MODE_OFF: HVACMode.OFF,
@@ -141,8 +147,20 @@ async def async_setup_entry(
     platform.async_register_entity_service(
         SERVICE_SET_HEATING_CURVE,
         {
-            vol.Required(SERVICE_SET_HEATING_CURVE_ATTR_SHIFT): int,
-            vol.Required(SERVICE_SET_HEATING_CURVE_ATTR_SLOPE): float,
+            vol.Required(SERVICE_SET_HEATING_CURVE_ATTR_SHIFT): vol.All(
+                vol.Coerce(int),
+                vol.Clamp(
+                    min=VICARE_HEATING_CURVE_SHIFT_MIN,
+                    max=VICARE_HEATING_CURVE_SHIFT_MAX,
+                ),
+            ),
+            vol.Required(SERVICE_SET_HEATING_CURVE_ATTR_SLOPE): vol.All(
+                vol.Coerce(float),
+                vol.Clamp(
+                    min=VICARE_HEATING_CURVE_SLOPE_MIN,
+                    max=VICARE_HEATING_CURVE_SLOPE_MAX,
+                ),
+            ),
         },
         "set_heating_curve",
     )
@@ -389,9 +407,5 @@ class ViCareClimate(ClimateEntity):
         self._circuit.setMode(vicare_mode)
 
     def set_heating_curve(self, shift, slope):
-        """Service function to set vicare modes directly."""
-        if not 0.2 <= round(float(slope), 1) <= 3.5:
-            raise ValueError(f"Cannot set invalid heating curve slope: {slope}.")
-        if not -13 <= int(shift) <= 40:
-            raise ValueError(f"Cannot set invalid heating curve shift: {shift}.")
+        """Service function to set vicare heating curve directly."""
         self._circuit.setHeatingCurve(int(shift), round(float(slope), 1))
