@@ -37,14 +37,20 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from . import ViCareRequiredKeysMixin
 from .const import (
     DOMAIN,
+    VICARE_CUBIC_METER,
     VICARE_DEVICE_CONFIG,
+    VICARE_KWH,
     VICARE_NAME,
-    VICARE_UNIT_TO_DEVICE_CLASS,
     VICARE_UNIT_TO_UNIT_OF_MEASUREMENT,
 )
 from .helpers import get_device_name, get_unique_device_id, get_unique_id
 
 _LOGGER = logging.getLogger(__name__)
+
+VICARE_UNIT_TO_DEVICE_CLASS = {
+    VICARE_KWH: SensorDeviceClass.ENERGY,
+    VICARE_CUBIC_METER: SensorDeviceClass.GAS,
+}
 
 
 @dataclass
