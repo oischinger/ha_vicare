@@ -1,38 +1,34 @@
-"""Viessmann ViCare sensor device."""
+"""Viessmann ViCare switch device."""
 from __future__ import annotations
 
 import datetime
+import logging
 from contextlib import suppress
-from collections.abc import Callable
 from dataclasses import dataclass
 
-
-from datetime import timedelta
-
-import logging
-
+import requests
 from PyViCare.PyViCareUtils import (
+    PyViCareInternalServerError,
     PyViCareInvalidDataError,
     PyViCareNotSupportedFeatureError,
     PyViCareRateLimitError,
 )
-import requests
-
 from homeassistant.components.switch import SwitchEntity, SwitchEntityDescription
-
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.entity import DeviceInfo, EntityCategory
+from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.event import async_call_later
 
 from . import ViCareRequiredKeysMixin, ViCareToggleKeysMixin
-from .const import DOMAIN, VICARE_API, VICARE_DEVICE_CONFIG, VICARE_NAME
+from .const import DOMAIN, VICARE_DEVICE_CONFIG, VICARE_NAME
+from .helpers import get_device_name, get_unique_device_id, get_unique_id
 
 _LOGGER = logging.getLogger(__name__)
 
 SWITCH_DHW_ONETIME_CHARGE = "dhw_onetimecharge"
-TIMEDELTA_UPDATE = timedelta(seconds=5)
+TIMEDELTA_UPDATE = datetime.timedelta(seconds=5)
+
 
 @dataclass
 class ViCareSwitchEntityDescription(SwitchEntityDescription, ViCareRequiredKeysMixin, ViCareToggleKeysMixin):
@@ -52,28 +48,63 @@ SWITCH_DESCRIPTIONS: tuple[ViCareSwitchEntityDescription, ...] = (
 )
 
 
+def _build_entity(name, vicare_api, device_config, description):
+    """Create a ViCare switch entity."""
+    _LOGGER.debug("Found device %s", name)
+    try:
+        description.value_getter(vicare_api)
+        _LOGGER.debug("Found entity %s", name)
+    except PyViCareInternalServerError as server_error:
+        _LOGGER.info(
+            "Server error ( %s): Not creating entity %s", server_error.message, name
+        )
+        return None
+    except PyViCareNotSupportedFeatureError:
+        _LOGGER.info("Feature not supported %s", name)
+        return None
+    except AttributeError:
+        _LOGGER.debug("Attribute Error %s", name)
+        return None
+
+    return ViCareSwitch(
+        name,
+        vicare_api,
+        device_config,
+        description,
+    )
+
+
 async def async_setup_entry(
         hass: HomeAssistant,
         config_entry: ConfigEntry,
         async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Create the ViCare switch devices."""
-    name = VICARE_NAME
-    api = hass.data[DOMAIN][config_entry.entry_id][VICARE_API]
+    """Create the ViCare switch entities."""
+    entities = await hass.async_add_executor_job(
+        create_all_entities, hass, config_entry
+    )
+    async_add_entities(entities)
 
+
+def create_all_entities(hass: HomeAssistant, config_entry: ConfigEntry):
+    """Create entities for all devices and their circuits, burners or compressors if applicable."""
+    name = VICARE_NAME
     entities = []
 
-    for description in SWITCH_DESCRIPTIONS:
-        entity = ViCareSwitch(
-            f"{name} {description.name}",
-            api,
-            hass.data[DOMAIN][config_entry.entry_id][VICARE_DEVICE_CONFIG],
-            description,
-        )
-        if entity is not None:
-            entities.append(entity)
+    for device in hass.data[DOMAIN][config_entry.entry_id][VICARE_DEVICE_CONFIG]:
+        api = device.asAutoDetectDevice()
 
-    async_add_entities(entities)
+        for description in SWITCH_DESCRIPTIONS:
+            entity = _build_entity(
+                f"{name} {description.name}",
+                api,
+                device,
+                description,
+            )
+            if entity is not None:
+                entities.append(entity)
+
+    return entities
 
 
 class ViCareSwitch(SwitchEntity):
@@ -83,7 +114,7 @@ class ViCareSwitch(SwitchEntity):
 
     def __init__(
             self, name, api, device_config, description: ViCareSwitchEntityDescription
-    ):
+    ) -> None:
         """Initialize the switch."""
         self.entity_description = description
         self._device_config = device_config
@@ -95,7 +126,6 @@ class ViCareSwitch(SwitchEntity):
     def is_on(self) -> bool:
         """Return true if device is on."""
         return self._state
-
 
     async def async_update(self):
         """update internal state"""
@@ -119,7 +149,6 @@ class ViCareSwitch(SwitchEntity):
             _LOGGER.error("Vicare API rate limit exceeded: %s", limit_exception)
         except PyViCareInvalidDataError as invalid_data_exception:
             _LOGGER.error("Invalid data from Vicare server: %s", invalid_data_exception)
-
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Handle the button press."""
@@ -158,13 +187,17 @@ class ViCareSwitch(SwitchEntity):
         except PyViCareInvalidDataError as invalid_data_exception:
             _LOGGER.error("Invalid data from Vicare server: %s", invalid_data_exception)
 
-        
     @property
     def device_info(self) -> DeviceInfo:
         """Return device info for this device."""
         return DeviceInfo(
-            identifiers={(DOMAIN, self._device_config.getConfig().serial)},
-            name=self._device_config.getModel(),
+            identifiers={
+                (
+                    DOMAIN,
+                    get_unique_device_id(self._device_config),
+                )
+            },
+            name=get_device_name(self._device_config),
             manufacturer="Viessmann",
             model=self._device_config.getModel(),
             configuration_url="https://developer.viessmann.com/",
@@ -173,9 +206,6 @@ class ViCareSwitch(SwitchEntity):
     @property
     def unique_id(self) -> str:
         """Return unique ID for this device."""
-        tmp_id = (
-            f"{self._device_config.getConfig().serial}-{self.entity_description.key}"
+        return get_unique_id(
+            self._api, self._device_config, self.entity_description.key
         )
-        if hasattr(self._api, "id"):
-            return f"{tmp_id}-{self._api.id}"
-        return tmp_id
