@@ -1,0 +1,31 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "*"
+
+jobs:
+  release:
+    name: Prepare release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      # Pack the HACS dir as a zip and upload to the release
+      - name: ZIP vicare Dir
+        run: |
+          cd /home/runner/work/ha_vicare/ha_vicare/custom_components/vicare
+          zip vicare.zip -r ./
+
+      - name: Upload zip to release
+        uses: svenstaro/upload-release-action@v1-release
+
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: /home/runner/work/ha_vicare/ha_vicare/custom_components/vicare/vicare.zip
+          asset_name: vicare.zip
+          tag: ${{ github.ref }}
+          overwrite: true
+          prerelease: true

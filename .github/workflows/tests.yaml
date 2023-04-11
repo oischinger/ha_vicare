@@ -1,0 +1,39 @@
+name: Tests
+
+on: [push]
+
+jobs:
+  test:
+    runs-on: "ubuntu-latest"
+    steps:
+      - uses: "actions/checkout@v3"
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install flake8 pytest pytest-cov
+          pip install -r requirements_test.txt
+
+      - name: pytest
+        run: |
+          pytest --junitxml=pytest.xml --cov-report="xml:coverage.xml" --cov=custom_components/vicare tests/
+
+      - name: Pytest coverage comment
+        uses: MishaKav/pytest-coverage-comment@main
+        with:
+          pytest-xml-coverage-path: ./coverage.xml
+          junitxml-path: ./pytest.xml
+          title: HA ViCare
+          badge-title: HA ViCare Coverage
+          hide-badge: false
+          hide-report: false
+          create-new-comment: false
+          hide-comment: false
+          report-only-changed-files: false
+          remove-link-from-badge: false
+  

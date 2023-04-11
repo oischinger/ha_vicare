@@ -1,0 +1,19 @@
+# serializer version: 1
+# name: test_binary_sensors[binary_sensor.vicare_burner_active]
+  <state binary_sensor.vicare_burner_active=off; device_class=power, friendly_name=ViCare Burner active @ 2022-04-19T00:53:05-07:00>
+# ---
+# name: test_binary_sensors[binary_sensor.vicare_circulation_pump_active]
+  None
+# ---
+# name: test_binary_sensors[binary_sensor.vicare_dhw_charging_active]
+  <state binary_sensor.vicare_dhw_charging_active=off; device_class=running, friendly_name=ViCare DHW Charging active @ 2022-04-19T00:53:05-07:00>
+# ---
+# name: test_binary_sensors[binary_sensor.vicare_dhw_circulation_pump_active]
+  <state binary_sensor.vicare_dhw_circulation_pump_active=on; device_class=power, friendly_name=ViCare DHW Circulation Pump Active @ 2022-04-19T00:53:05-07:00>
+# ---
+# name: test_binary_sensors[binary_sensor.vicare_dhw_pump_active]
+  <state binary_sensor.vicare_dhw_pump_active=off; device_class=power, friendly_name=ViCare DHW Pump Active @ 2022-04-19T00:53:05-07:00>
+# ---
+# name: test_binary_sensors[binary_sensor.vicare_frost_protection_active]
+  None
+# ---

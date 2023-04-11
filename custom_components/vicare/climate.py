@@ -6,6 +6,7 @@ import logging
 from typing import Any
 
 from PyViCare.PyViCareUtils import (
+    PyViCareCommandError,
     PyViCareInvalidDataError,
     PyViCareNotSupportedFeatureError,
     PyViCareRateLimitError,
@@ -13,11 +14,11 @@ from PyViCare.PyViCareUtils import (
 import requests
 import voluptuous as vol
 
-from homeassistant.components.climate import ClimateEntity
-from homeassistant.components.climate.const import (
+from homeassistant.components.climate import (
     PRESET_COMFORT,
     PRESET_ECO,
     PRESET_NONE,
+    ClimateEntity,
     ClimateEntityFeature,
     HVACAction,
     HVACMode,
@@ -27,7 +28,7 @@ from homeassistant.const import (
     ATTR_TEMPERATURE,
     PRECISION_TENTHS,
     PRECISION_WHOLE,
-    TEMP_CELSIUS,
+    UnitOfTemperature,
 )
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_platform
@@ -35,18 +36,17 @@ import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import (
-    CONF_HEATING_TYPE,
-    DOMAIN,
-    VICARE_API,
-    VICARE_DEVICE_CONFIG,
-    VICARE_NAME,
-)
+from .const import DOMAIN, VICARE_DEVICE_CONFIG, VICARE_NAME
+from .helpers import get_device_name, get_unique_device_id, get_unique_id
 
 _LOGGER = logging.getLogger(__name__)
 
 SERVICE_SET_VICARE_MODE = "set_vicare_mode"
 SERVICE_SET_VICARE_MODE_ATTR_MODE = "vicare_mode"
+
+SERVICE_SET_HEATING_CURVE = "set_heating_curve"
+SERVICE_SET_HEATING_CURVE_ATTR_SLOPE = "slope"
+SERVICE_SET_HEATING_CURVE_ATTR_SHIFT = "shift"
 
 VICARE_MODE_DHW = "dhw"
 VICARE_MODE_HEATING = "heating"
@@ -71,6 +71,12 @@ VICARE_HOLD_MODE_OFF = "off"
 
 VICARE_TEMP_HEATING_MIN = 3
 VICARE_TEMP_HEATING_MAX = 37
+
+VICARE_HEATING_CURVE_SLOPE_MIN = 0.3
+VICARE_HEATING_CURVE_SLOPE_MAX = 3.5
+
+VICARE_HEATING_CURVE_SHIFT_MIN = -13
+VICARE_HEATING_CURVE_SHIFT_MAX = 40
 
 VICARE_TO_HA_HVAC_HEATING = {
     VICARE_MODE_FORCEDREDUCED: HVACMode.OFF,
@@ -112,22 +118,23 @@ async def async_setup_entry(
     """Set up the ViCare climate platform."""
     name = VICARE_NAME
     entities = []
-    api = hass.data[DOMAIN][config_entry.entry_id][VICARE_API]
-    circuits = await hass.async_add_executor_job(_get_circuits, api)
 
-    for circuit in circuits:
-        suffix = ""
-        if len(circuits) > 1:
-            suffix = f" {circuit.id}"
+    for device in hass.data[DOMAIN][config_entry.entry_id][VICARE_DEVICE_CONFIG]:
+        api = device.asAutoDetectDevice()
 
-        entity = ViCareClimate(
-            f"{name} Heating{suffix}",
-            api,
-            circuit,
-            hass.data[DOMAIN][config_entry.entry_id][VICARE_DEVICE_CONFIG],
-            config_entry.data[CONF_HEATING_TYPE],
-        )
-        entities.append(entity)
+        circuits = await hass.async_add_executor_job(_get_circuits, api)
+        for circuit in circuits:
+            suffix = ""
+            if len(circuits) > 1:
+                suffix = f" {circuit.id}"
+
+            entity = ViCareClimate(
+                f"{name} Heating{suffix}",
+                api,
+                circuit,
+                device,
+            )
+            entities.append(entity)
 
     platform = entity_platform.async_get_current_platform()
 
@@ -135,6 +142,27 @@ async def async_setup_entry(
         SERVICE_SET_VICARE_MODE,
         {vol.Required(SERVICE_SET_VICARE_MODE_ATTR_MODE): cv.string},
         "set_vicare_mode",
+    )
+
+    platform.async_register_entity_service(
+        SERVICE_SET_HEATING_CURVE,
+        {
+            vol.Required(SERVICE_SET_HEATING_CURVE_ATTR_SHIFT): vol.All(
+                vol.Coerce(int),
+                vol.Clamp(
+                    min=VICARE_HEATING_CURVE_SHIFT_MIN,
+                    max=VICARE_HEATING_CURVE_SHIFT_MAX,
+                ),
+            ),
+            vol.Required(SERVICE_SET_HEATING_CURVE_ATTR_SLOPE): vol.All(
+                vol.Coerce(float),
+                vol.Clamp(
+                    min=VICARE_HEATING_CURVE_SLOPE_MIN,
+                    max=VICARE_HEATING_CURVE_SLOPE_MAX,
+                ),
+            ),
+        },
+        "set_heating_curve",
     )
 
     async_add_entities(entities)
@@ -147,9 +175,9 @@ class ViCareClimate(ClimateEntity):
     _attr_supported_features = (
         ClimateEntityFeature.TARGET_TEMPERATURE | ClimateEntityFeature.PRESET_MODE
     )
-    _attr_temperature_unit = TEMP_CELSIUS
+    _attr_temperature_unit = UnitOfTemperature.CELSIUS
 
-    def __init__(self, name, api, circuit, device_config, heating_type):
+    def __init__(self, name, api, circuit, device_config):
         """Initialize the climate device."""
         self._name = name
         self._state = None
@@ -161,20 +189,24 @@ class ViCareClimate(ClimateEntity):
         self._current_mode = None
         self._current_temperature = None
         self._current_program = None
-        self._heating_type = heating_type
         self._current_action = None
 
     @property
     def unique_id(self) -> str:
         """Return unique ID for this device."""
-        return f"{self._device_config.getConfig().serial}-{self._circuit.id}"
+        return get_unique_id(self._api, self._device_config, self._circuit.id)
 
     @property
     def device_info(self) -> DeviceInfo:
         """Return device info for this device."""
         return DeviceInfo(
-            identifiers={(DOMAIN, self._device_config.getConfig().serial)},
-            name=self._device_config.getModel(),
+            identifiers={
+                (
+                    DOMAIN,
+                    get_unique_device_id(self._device_config),
+                )
+            },
+            name=get_device_name(self._device_config),
             manufacturer="Viessmann",
             model=self._device_config.getModel(),
             configuration_url="https://developer.viessmann.com/",
@@ -354,7 +386,10 @@ class ViCareClimate(ClimateEntity):
         _LOGGER.debug("Setting preset to %s / %s", preset_mode, vicare_program)
         if self._current_program != VICARE_PROGRAM_NORMAL:
             # We can't deactivate "normal"
-            self._circuit.deactivateProgram(self._current_program)
+            try:
+                self._circuit.deactivateProgram(self._current_program)
+            except PyViCareCommandError:
+                _LOGGER.debug("Unable to deactivate program %s", self._current_program)
         if vicare_program != VICARE_PROGRAM_NORMAL:
             # And we can't explicitly activate normal, either
             self._circuit.activateProgram(vicare_program)
@@ -370,3 +405,7 @@ class ViCareClimate(ClimateEntity):
             raise ValueError(f"Cannot set invalid vicare mode: {vicare_mode}.")
 
         self._circuit.setMode(vicare_mode)
+
+    def set_heating_curve(self, shift, slope):
+        """Service function to set vicare heating curve directly."""
+        self._circuit.setHeatingCurve(int(shift), round(float(slope), 1))

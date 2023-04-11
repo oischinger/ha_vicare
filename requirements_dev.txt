@@ -1,0 +1,2 @@
+PyViCare >= 2.25.0
+homeassistant >= 2023.4.1

@@ -1,0 +1,64 @@
+# serializer version: 1
+# name: test_gas_boiler_sensors[sensor.vicare_boiler_temperature]
+  <state sensor.vicare_boiler_temperature=63; state_class=measurement, unit_of_measurement=°C, device_class=temperature, friendly_name=ViCare Boiler Temperature @ 2022-04-19T00:53:05-07:00>
+# ---
+# name: test_gas_boiler_sensors[sensor.vicare_burner_hours]
+  <state sensor.vicare_burner_hours=18726.3; state_class=total_increasing, unit_of_measurement=h, icon=mdi:counter, friendly_name=ViCare Burner Hours @ 2022-04-19T00:53:05-07:00>
+# ---
+# name: test_gas_boiler_sensors[sensor.vicare_burner_modulation]
+  <state sensor.vicare_burner_modulation=0; state_class=measurement, unit_of_measurement=%, icon=mdi:percent, friendly_name=ViCare Burner Modulation @ 2022-04-19T00:53:05-07:00>
+# ---
+# name: test_gas_boiler_sensors[sensor.vicare_burner_starts]
+  <state sensor.vicare_burner_starts=14315; state_class=total_increasing, icon=mdi:counter, friendly_name=ViCare Burner Starts @ 2022-04-19T00:53:05-07:00>
+# ---
+# name: test_gas_boiler_sensors[sensor.vicare_energy_consumption_this_month]
+  <state sensor.vicare_energy_consumption_this_month=7.843; state_class=total_increasing, unit_of_measurement=kWh, device_class=energy, friendly_name=ViCare Energy consumption this month @ 2022-04-19T00:53:05-07:00>
+# ---
+# name: test_gas_boiler_sensors[sensor.vicare_energy_consumption_this_year]
+  <state sensor.vicare_energy_consumption_this_year=207.106; state_class=total_increasing, unit_of_measurement=kWh, device_class=energy, friendly_name=ViCare Energy consumption this year @ 2022-04-19T00:53:05-07:00>
+# ---
+# name: test_gas_boiler_sensors[sensor.vicare_energy_consumption_today]
+  <state sensor.vicare_energy_consumption_today=0.219; state_class=total_increasing, unit_of_measurement=kWh, device_class=energy, friendly_name=ViCare Energy consumption today @ 2022-04-19T00:53:05-07:00>
+# ---
+# name: test_gas_boiler_sensors[sensor.vicare_heating_gas_consumption_this_month]
+  <state sensor.vicare_heating_gas_consumption_this_month=0; state_class=total_increasing, friendly_name=ViCare Heating gas consumption this month @ 2022-04-19T00:53:05-07:00>
+# ---
+# name: test_gas_boiler_sensors[sensor.vicare_heating_gas_consumption_this_week]
+  <state sensor.vicare_heating_gas_consumption_this_week=0; state_class=total_increasing, friendly_name=ViCare Heating gas consumption this week @ 2022-04-19T00:53:05-07:00>
+# ---
+# name: test_gas_boiler_sensors[sensor.vicare_heating_gas_consumption_this_year]
+  <state sensor.vicare_heating_gas_consumption_this_year=30946; state_class=total_increasing, friendly_name=ViCare Heating gas consumption this year @ 2022-04-19T00:53:05-07:00>
+# ---
+# name: test_gas_boiler_sensors[sensor.vicare_heating_gas_consumption_today]
+  <state sensor.vicare_heating_gas_consumption_today=0; state_class=total_increasing, friendly_name=ViCare Heating gas consumption today @ 2022-04-19T00:53:05-07:00>
+# ---
+# name: test_gas_boiler_sensors[sensor.vicare_hot_water_gas_consumption_this_month]
+  <state sensor.vicare_hot_water_gas_consumption_this_month=805; state_class=total_increasing, friendly_name=ViCare Hot water gas consumption this month @ 2022-04-19T00:53:05-07:00>
+# ---
+# name: test_gas_boiler_sensors[sensor.vicare_hot_water_gas_consumption_this_week]
+  <state sensor.vicare_hot_water_gas_consumption_this_week=84; state_class=total_increasing, friendly_name=ViCare Hot water gas consumption this week @ 2022-04-19T00:53:05-07:00>
+# ---
+# name: test_gas_boiler_sensors[sensor.vicare_hot_water_gas_consumption_this_year]
+  <state sensor.vicare_hot_water_gas_consumption_this_year=8203; state_class=total_increasing, friendly_name=ViCare Hot water gas consumption this year @ 2022-04-19T00:53:05-07:00>
+# ---
+# name: test_gas_boiler_sensors[sensor.vicare_hot_water_gas_consumption_today]
+  <state sensor.vicare_hot_water_gas_consumption_today=22; state_class=total_increasing, friendly_name=ViCare Hot water gas consumption today @ 2022-04-19T00:53:05-07:00>
+# ---
+# name: test_gas_boiler_sensors[sensor.vicare_hot_water_max_temperature]
+  <state sensor.vicare_hot_water_max_temperature=60; state_class=measurement, unit_of_measurement=°C, device_class=temperature, friendly_name=ViCare Hot Water Max Temperature @ 2022-04-19T00:53:05-07:00>
+# ---
+# name: test_gas_boiler_sensors[sensor.vicare_hot_water_min_temperature]
+  <state sensor.vicare_hot_water_min_temperature=10; state_class=measurement, unit_of_measurement=°C, device_class=temperature, friendly_name=ViCare Hot Water Min Temperature @ 2022-04-19T00:53:05-07:00>
+# ---
+# name: test_gas_boiler_sensors[sensor.vicare_outside_temperature]
+  <state sensor.vicare_outside_temperature=20.8; state_class=measurement, unit_of_measurement=°C, device_class=temperature, friendly_name=ViCare Outside Temperature @ 2022-04-19T00:53:05-07:00>
+# ---
+# name: test_gas_boiler_sensors[sensor.vicare_power_consumption_this_week]
+  <state sensor.vicare_power_consumption_this_week=0.829; state_class=total_increasing, unit_of_measurement=kWh, device_class=energy, friendly_name=ViCare Power consumption this week @ 2022-04-19T00:53:05-07:00>
+# ---
+# name: test_room_sensor_sensors[sensor.vicare_room_humidity]
+  <state sensor.vicare_room_humidity=56; state_class=measurement, unit_of_measurement=%, icon=mdi:percent, friendly_name=ViCare Room Humidity @ 2022-04-19T00:53:05-07:00>
+# ---
+# name: test_room_sensor_sensors[sensor.vicare_room_temperature]
+  <state sensor.vicare_room_temperature=19.7; state_class=measurement, unit_of_measurement=°C, device_class=temperature, friendly_name=ViCare Room Temperature @ 2022-04-19T00:53:05-07:00>
+# ---
