@@ -129,7 +129,7 @@ def setup_vicare_api(hass, entry):
         _LOGGER.info(
             "Found device: %s (online: %s)", device.getModel(), str(device.isOnline())
         )
-        device.service.__cacheDuration = DEFAULT_SCAN_INTERVAL * len(vicare_api.devices)
+        device.service._PyViCareCachedService__cacheDuration = DEFAULT_SCAN_INTERVAL * len(vicare_api.devices)
 
 
     hass.data[DOMAIN][entry.entry_id][VICARE_DEVICE_CONFIG] = vicare_api.devices
