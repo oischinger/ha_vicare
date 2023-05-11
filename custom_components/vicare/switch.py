@@ -120,7 +120,7 @@ class ViCareSwitch(SwitchEntity):
         self._device_config = device_config
         self._api = api
         self._ignore_update_until = datetime.datetime.utcnow()
-        self._state = None
+        update()
 
     @property
     def is_on(self) -> bool:
