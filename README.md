@@ -39,6 +39,10 @@ Open the `Configuration` of your Home-Assistant instance and select `Integration
 Add a new integration, search and select `vicare`.
 A dialog appears to enter your [ViCare API](https://developer.viessmann.com/start.html) credentials. Please see the documentation of the [official Home Assistant ViCare integration](https://www.home-assistant.io/integrations/vicare) for further details.
 
+## Development
+
+See [DEVELOPMENT.md](DEVELOPMENT.md) for how to set up a development environment and contribute.
+
 ## Links/Credits:
 
 - [Original feature request in HA community](https://community.home-assistant.io/t/viessmann-component/77873)
