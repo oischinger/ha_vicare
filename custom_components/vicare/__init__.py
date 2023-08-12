@@ -9,10 +9,17 @@ import os
 
 from PyViCare.PyViCare import PyViCare
 from PyViCare.PyViCareDevice import Device
+from PyViCare.PyViCareUtils import (
+    PyViCareInternalServerError,
+    PyViCareInvalidCredentialsError,
+    PyViCareRateLimitError,
+)
+import requests
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_CLIENT_ID, CONF_PASSWORD, CONF_USERNAME
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.storage import STORAGE_DIR
 
@@ -105,19 +112,27 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     hass.data[DOMAIN] = {}
     hass.data[DOMAIN][entry.entry_id] = {}
 
-    await hass.async_add_executor_job(setup_vicare_api, hass, entry)
+    try:
+        await hass.async_add_executor_job(setup_vicare_api, hass, entry)
 
-    await _async_migrate_entries(hass, entry)
+        await _async_migrate_entries(hass, entry)
 
-    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+        await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
-    return True
+        return True
+    except PyViCareInvalidCredentialsError as err:
+        raise ConfigEntryAuthFailed from err
+    except PyViCareRateLimitError as err:
+        raise ConfigEntryNotReady from err
+    except PyViCareInternalServerError as err:
+        raise ConfigEntryNotReady from err
+    except requests.exceptions.ConnectionError as err:
+        raise ConfigEntryNotReady from err
 
-
-def vicare_login(hass, entry_data):
+def vicare_login(hass, entry_data, scan_interval = DEFAULT_SCAN_INTERVAL):
     """Login via PyVicare API."""
     vicare_api = PyViCare()
-    vicare_api.setCacheDuration(DEFAULT_SCAN_INTERVAL)
+    vicare_api.setCacheDuration(scan_interval)
     vicare_api.initWithCredentials(
         entry_data[CONF_USERNAME],
         entry_data[CONF_PASSWORD],
@@ -130,9 +145,13 @@ def vicare_login(hass, entry_data):
 def setup_vicare_api(hass, entry):
     """Set up PyVicare API."""
     vicare_api = vicare_login(hass, entry.data)
+    scan_interval = max(DEFAULT_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL * len(vicare_api.devices))
 
-    # Readjust scan interval: each device has its own API endpoint
-    vicare_api.setCacheDuration(DEFAULT_SCAN_INTERVAL * len(vicare_api.devices))
+    _LOGGER.info(
+         "Setting up API with scan interval %i seconds.", scan_interval
+    )
+   
+    vicare_api = vicare_login(hass, entry.data, scan_interval)
 
     for device in vicare_api.devices:
         _LOGGER.info(
