@@ -114,10 +114,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     return True
 
 
-def vicare_login(hass, entry_data):
+def vicare_login(hass, entry_data, scan_interval = DEFAULT_SCAN_INTERVAL):
     """Login via PyVicare API."""
     vicare_api = PyViCare()
-    vicare_api.setCacheDuration(DEFAULT_SCAN_INTERVAL)
+    vicare_api.setCacheDuration(scan_interval)
     vicare_api.initWithCredentials(
         entry_data[CONF_USERNAME],
         entry_data[CONF_PASSWORD],
@@ -130,9 +130,13 @@ def vicare_login(hass, entry_data):
 def setup_vicare_api(hass, entry):
     """Set up PyVicare API."""
     vicare_api = vicare_login(hass, entry.data)
+    scan_interval = max(DEFAULT_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL * len(vicare_api.devices))
 
-    # Readjust scan interval: each device has its own API endpoint
-    vicare_api.setCacheDuration(DEFAULT_SCAN_INTERVAL * len(vicare_api.devices))
+    _LOGGER.info(
+         "Setting up API with scan interval %i seconds.", scan_interval
+    )
+   
+    vicare_api = vicare_login(hass, entry.data, scan_interval)
 
     for device in vicare_api.devices:
         _LOGGER.info(
