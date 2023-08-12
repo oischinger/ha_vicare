@@ -4,7 +4,12 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from PyViCare.PyViCareUtils import PyViCareInvalidCredentialsError
+from PyViCare.PyViCareUtils import (
+    PyViCareInternalServerError,
+    PyViCareInvalidCredentialsError,
+    PyViCareRateLimitError,
+)
+import requests
 import voluptuous as vol
 
 from homeassistant import config_entries
@@ -38,6 +43,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             vol.Required(CONF_CLIENT_ID): cv.string,
         }
         errors: dict[str, str] = {}
+        description_placeholders: dict[str, str] = {}
 
         if user_input is not None:
             try:
@@ -46,6 +52,15 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 )
             except PyViCareInvalidCredentialsError:
                 errors["base"] = "invalid_auth"
+            except PyViCareInternalServerError as err:
+                errors["base"] = "server_error"
+                description_placeholders = {"error": str(err)}   
+            except requests.exceptions.ConnectionError as err:
+                errors["base"] = "cannot_connect"
+                description_placeholders = {"error": str(err)}  
+            except PyViCareRateLimitError as err:
+                errors["base"] = "too_many_attempts"
+                description_placeholders = {"error": str(err)}
             else:
                 return self.async_create_entry(title=VICARE_NAME, data=user_input)
 
@@ -53,6 +68,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             step_id="user",
             data_schema=vol.Schema(data_schema),
             errors=errors,
+            description_placeholders = description_placeholders
         )
 
     async def async_step_dhcp(self, discovery_info: dhcp.DhcpServiceInfo) -> FlowResult:

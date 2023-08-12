@@ -9,10 +9,17 @@ import os
 
 from PyViCare.PyViCare import PyViCare
 from PyViCare.PyViCareDevice import Device
+from PyViCare.PyViCareUtils import (
+    PyViCareInternalServerError,
+    PyViCareInvalidCredentialsError,
+    PyViCareRateLimitError,
+)
+import requests
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_CLIENT_ID, CONF_PASSWORD, CONF_USERNAME
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.storage import STORAGE_DIR
 
@@ -105,14 +112,22 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     hass.data[DOMAIN] = {}
     hass.data[DOMAIN][entry.entry_id] = {}
 
-    await hass.async_add_executor_job(setup_vicare_api, hass, entry)
+    try:
+        await hass.async_add_executor_job(setup_vicare_api, hass, entry)
 
-    await _async_migrate_entries(hass, entry)
+        await _async_migrate_entries(hass, entry)
 
-    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+        await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
-    return True
-
+        return True
+    except PyViCareInvalidCredentialsError as err:
+        raise ConfigEntryAuthFailed from err
+    except PyViCareRateLimitError as err:
+        raise ConfigEntryNotReady from err
+    except PyViCareInternalServerError as err:
+        raise ConfigEntryNotReady from err
+    except requests.exceptions.ConnectionError as err:
+        raise ConfigEntryNotReady from err
 
 def vicare_login(hass, entry_data, scan_interval = DEFAULT_SCAN_INTERVAL):
     """Login via PyVicare API."""

@@ -1,23 +1,26 @@
 {
-    "config": {
-        "abort": {
-            "single_instance_allowed": "Already configured. Only a single configuration possible.",
-            "unknown": "Unexpected error"
+  "config": {
+    "abort": {
+      "single_instance_allowed": "Already configured. Only a single configuration possible.",
+      "unknown": "Unexpected error"
+    },
+    "error": {
+      "cannot_connect": "Failed to connect: {error}",
+      "invalid_auth": "Invalid authentication",
+      "too_many_attempts": "Too many attempts, temporarily banned: {error}",
+      "server_error": "ViCare server error: {error}"
+    },
+    "flow_title": "{name} ({host})",
+    "step": {
+      "user": {
+        "data": {
+          "client_id": "API Key",
+          "heating_type": "Heating type",
+          "password": "Password",
+          "username": "Email"
         },
-        "error": {
-            "invalid_auth": "Invalid authentication"
-        },
-        "flow_title": "{name} ({host})",
-        "step": {
-            "user": {
-                "data": {
-                    "client_id": "API Key",
-                    "heating_type": "Heating type",
-                    "password": "Password",
-                    "username": "Email"
-                },
-                "description": "Set up ViCare integration. To generate API key go to https://developer.viessmann.com"
-            }
-        }
+        "description": "Set up ViCare integration. To generate API key go to https://developer.viessmann.com"
+      }
     }
+  }
 }
