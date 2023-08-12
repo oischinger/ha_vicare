@@ -15,12 +15,7 @@ from homeassistant.components.water_heater import (
     WaterHeaterEntityFeature,
 )
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import (
-    ATTR_TEMPERATURE,
-    PRECISION_TENTHS,
-    PRECISION_WHOLE,
-    UnitOfTemperature,
-)
+from homeassistant.const import ATTR_TEMPERATURE, PRECISION_WHOLE, UnitOfTemperature
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -30,6 +25,9 @@ from .helpers import get_circuits, get_device_name, get_unique_device_id, get_un
 
 _LOGGER = logging.getLogger(__name__)
 
+VICARE_TEMP_WATER_MIN = 10
+VICARE_TEMP_WATER_MAX = 60
+
 VICARE_MODE_DHW = "dhw"
 VICARE_MODE_HEATING = "heating"
 VICARE_MODE_DHWANDHEATING = "dhwAndHeating"
@@ -37,9 +35,6 @@ VICARE_MODE_DHWANDHEATINGCOOLING = "dhwAndHeatingCooling"
 VICARE_MODE_FORCEDREDUCED = "forcedReduced"
 VICARE_MODE_FORCEDNORMAL = "forcedNormal"
 VICARE_MODE_OFF = "standby"
-
-VICARE_TEMP_WATER_MIN = 10
-VICARE_TEMP_WATER_MAX = 60
 
 OPERATION_MODE_ON = "on"
 OPERATION_MODE_OFF = "off"
@@ -86,7 +81,7 @@ async def async_setup_entry(
 class ViCareWater(WaterHeaterEntity):
     """Representation of the ViCare domestic hot water device."""
 
-    _attr_precision = PRECISION_TENTHS
+    _attr_precision = PRECISION_WHOLE
     _attr_supported_features = WaterHeaterEntityFeature.TARGET_TEMPERATURE
 
     def __init__(self, name, api, circuit, device_config):
@@ -100,6 +95,9 @@ class ViCareWater(WaterHeaterEntity):
         self._target_temperature = None
         self._current_temperature = None
         self._current_mode = None
+        self._min_temp = None
+        self._max_temp = None
+        self.update()
 
     def update(self) -> None:
         """Let HA know there has been an update from the ViCare API."""
@@ -117,6 +115,16 @@ class ViCareWater(WaterHeaterEntity):
             with suppress(PyViCareNotSupportedFeatureError):
                 self._current_mode = self._circuit.getActiveMode()
 
+            with suppress(PyViCareNotSupportedFeatureError):
+                self._min_temp = self._api.getDomesticHotWaterMinTemperature()
+            if not self._min_temp:
+                self._min_temp = VICARE_TEMP_WATER_MIN
+
+            with suppress(PyViCareNotSupportedFeatureError):
+                self._max_temp = self._api.getDomesticHotWaterMaxTemperature()
+            if not self._max_temp:
+                self._max_temp = VICARE_TEMP_WATER_MAX
+    
         except (requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout):
             _LOGGER.error("Unable to retrieve data from ViCare server")
         except PyViCareRateLimitError as limit_exception:
@@ -176,16 +184,16 @@ class ViCareWater(WaterHeaterEntity):
     @property
     def min_temp(self):
         """Return the minimum temperature."""
-        return VICARE_TEMP_WATER_MIN
+        return self._min_temp
 
     @property
     def max_temp(self):
         """Return the maximum temperature."""
-        return VICARE_TEMP_WATER_MAX
+        return self._max_temp
 
     @property
     def target_temperature_step(self) -> float:
-        """Set target temperature step to wholes."""
+        """Get current stepping."""
         return PRECISION_WHOLE
 
     @property
