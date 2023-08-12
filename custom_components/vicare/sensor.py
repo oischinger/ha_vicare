@@ -43,7 +43,14 @@ from .const import (
     VICARE_NAME,
     VICARE_UNIT_TO_UNIT_OF_MEASUREMENT,
 )
-from .helpers import get_device_name, get_unique_device_id, get_unique_id
+from .helpers import (
+    get_burners,
+    get_circuits,
+    get_compressors,
+    get_device_name,
+    get_unique_device_id,
+    get_unique_id,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -666,7 +673,7 @@ def create_all_entities(hass: HomeAssistant, config_entry: ConfigEntry):
                 name,
                 entities,
                 CIRCUIT_SENSORS,
-                api.circuits,
+                get_circuits(api),
                 config_entry,
                 device,
             )
@@ -675,7 +682,7 @@ def create_all_entities(hass: HomeAssistant, config_entry: ConfigEntry):
 
         try:
             _entities_from_descriptions(
-                hass, name, entities, BURNER_SENSORS, api.burners, config_entry, device
+                hass, name, entities, BURNER_SENSORS, get_burners(api), config_entry, device
             )
         except PyViCareNotSupportedFeatureError:
             _LOGGER.info("No burners found")
@@ -686,7 +693,7 @@ def create_all_entities(hass: HomeAssistant, config_entry: ConfigEntry):
                 name,
                 entities,
                 COMPRESSOR_SENSORS,
-                api.compressors,
+                get_compressors(api),
                 config_entry,
                 device,
             )

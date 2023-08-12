@@ -37,7 +37,13 @@ from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DOMAIN, VICARE_DEVICE_CONFIG, VICARE_NAME
-from .helpers import get_device_name, get_unique_device_id, get_unique_id
+from .helpers import (
+    get_burners,
+    get_circuits,
+    get_device_name,
+    get_unique_device_id,
+    get_unique_id,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -101,15 +107,6 @@ HA_TO_VICARE_PRESET_HEATING = {
 }
 
 
-def _get_circuits(vicare_api):
-    """Return the list of circuits."""
-    try:
-        return vicare_api.circuits
-    except PyViCareNotSupportedFeatureError:
-        _LOGGER.info("No circuits found")
-        return []
-
-
 async def async_setup_entry(
     hass: HomeAssistant,
     config_entry: ConfigEntry,
@@ -122,7 +119,7 @@ async def async_setup_entry(
     for device in hass.data[DOMAIN][config_entry.entry_id][VICARE_DEVICE_CONFIG]:
         api = device.asAutoDetectDevice()
 
-        circuits = await hass.async_add_executor_job(_get_circuits, api)
+        circuits = await hass.async_add_executor_job(get_circuits, api)
         for circuit in circuits:
             suffix = ""
             if len(circuits) > 1:
@@ -261,7 +258,7 @@ class ViCareClimate(ClimateEntity):
             self._current_action = False
             # Update the specific device attributes
             with suppress(PyViCareNotSupportedFeatureError):
-                for burner in self._api.burners:
+                for burner in get_burners(self._api):
                     self._current_action = self._current_action or burner.getActive()
 
             with suppress(PyViCareNotSupportedFeatureError):
