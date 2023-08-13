@@ -1,18 +1,19 @@
 """Viessmann ViCare switch device."""
 from __future__ import annotations
 
-import datetime
-import logging
 from contextlib import suppress
 from dataclasses import dataclass
+import datetime
+import logging
 
-import requests
 from PyViCare.PyViCareUtils import (
     PyViCareInternalServerError,
     PyViCareInvalidDataError,
     PyViCareNotSupportedFeatureError,
     PyViCareRateLimitError,
 )
+import requests
+
 from homeassistant.components.switch import SwitchEntity, SwitchEntityDescription
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import EntityCategory
@@ -127,7 +128,7 @@ class ViCareSwitch(SwitchEntity):
         """Return true if device is on."""
         return self._state
 
-    async def async_update(self):
+    def update(self):
         """update internal state"""
         now = datetime.datetime.utcnow()
         """we have identified that the API does not directly sync the represented state, therefore we want to keep
@@ -140,7 +141,7 @@ class ViCareSwitch(SwitchEntity):
         try:
             with suppress(PyViCareNotSupportedFeatureError):
                 _LOGGER.debug("Fetching DHW One Time Charging Status")
-                self._state = await self.hass.async_add_executor_job(self.entity_description.value_getter, self._api)
+                self._state = self.entity_description.value_getter(self._api)
         except requests.exceptions.ConnectionError:
             _LOGGER.error("Unable to retrieve data from ViCare server")
         except ValueError:
