@@ -17,7 +17,8 @@
           "client_id": "API Key",
           "heating_type": "Heating type",
           "password": "Password",
-          "username": "Email"
+          "username": "Email",
+          "subscription_premium": "Premium subscription (3000 API calls/day)"
         },
         "description": "Set up ViCare integration. To generate API key go to https://developer.viessmann.com"
       }

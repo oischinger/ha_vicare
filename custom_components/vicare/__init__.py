@@ -23,7 +23,13 @@ from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.storage import STORAGE_DIR
 
-from .const import DEFAULT_SCAN_INTERVAL, DOMAIN, PLATFORMS, VICARE_DEVICE_CONFIG
+from .const import (
+    CONF_PREMIUM,
+    DEFAULT_SCAN_INTERVAL,
+    DOMAIN,
+    PLATFORMS,
+    VICARE_DEVICE_CONFIG,
+)
 from .helpers import get_unique_device_id
 
 _LOGGER = logging.getLogger(__name__)
@@ -147,6 +153,10 @@ def setup_vicare_api(hass, entry):
     vicare_api = vicare_login(hass, entry.data)
     scan_interval = max(DEFAULT_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL * len(vicare_api.devices))
 
+    # Premium subscription allows 3000 vs 1450 API calls per day
+    if CONF_PREMIUM in entry.data and entry.data[CONF_PREMIUM]:
+        scan_interval = scan_interval/2
+    
     _LOGGER.info(
          "Setting up API with scan interval %i seconds.", scan_interval
     )

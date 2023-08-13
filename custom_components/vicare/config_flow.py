@@ -20,7 +20,7 @@ import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.device_registry import format_mac
 
 from . import vicare_login
-from .const import DOMAIN, VICARE_NAME
+from .const import CONF_PREMIUM, DOMAIN, VICARE_NAME
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -41,6 +41,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             vol.Required(CONF_USERNAME): cv.string,
             vol.Required(CONF_PASSWORD): cv.string,
             vol.Required(CONF_CLIENT_ID): cv.string,
+            vol.Optional(CONF_PREMIUM): cv.boolean,
         }
         errors: dict[str, str] = {}
         description_placeholders: dict[str, str] = {}
