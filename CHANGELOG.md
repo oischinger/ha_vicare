@@ -7,6 +7,7 @@
 - Premium Subscription config option (for 2x amount of API calls)
 - Better error handling of API errors during integration setup
 - Fix exceeding of rate limits
+- Requires >= Home Assistant Core 2023.8.0
 
 # 1.0.0-alpha.1 - 1.0.0-alpha.6
 

@@ -22,8 +22,10 @@ Please refer to the [Changelog](CHANGELOG.md) to see what changed compared to th
 
 ### Install with HACS (recommended)
 
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?repository=ha_vicare&category=Integration&owner=https%3A%2F%2Fgithub.com%2Foischinger)
+
 1. Ensure that [HACS](https://community.home-assistant.io/t/custom-component-hacs) is installed.
-2. In HACS [add a custom repositories](https://hacs.xyz/docs/faq/custom_repositories/) and use this URL: `https://github.com/oischinger/ha_vicare`
+2. [Add this repository to HACS](https://my.home-assistant.io/redirect/hacs_repository/?repository=ha_vicare&category=Integration&owner=https%3A%2F%2Fgithub.com%2Foischinger)
 3. Search for and install the "ViCare" integration.
 4. Configure the `vicare` integration.
 5. Restart Home Assistant.
