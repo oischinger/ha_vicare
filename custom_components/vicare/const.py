@@ -21,6 +21,7 @@ VICARE_NAME = "ViCare"
 CONF_CIRCUIT = "circuit"
 
 DEFAULT_SCAN_INTERVAL = 60
+CONF_PREMIUM = "subscription_premium"
 
 VICARE_CUBIC_METER = "cubicMeter"
 VICARE_KWH = "kilowattHour"
