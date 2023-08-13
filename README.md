@@ -16,6 +16,8 @@ Please check out the [Official Home Assistant ViCare integration](https://www.ho
 
 Nevertheless I decided to still publish my work as a custom integration. Feel free to use it but please understand that I have very little time to work on it.
 
+Please refer to the [Changelog](CHANGELOG.md) to see what changed compared to the [Official Home Assistant ViCare integration](https://www.home-assistant.io/integrations/vicare).
+
 ## Installation
 
 ### Install with HACS (recommended)
