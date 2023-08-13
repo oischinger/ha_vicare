@@ -5,6 +5,7 @@ from contextlib import suppress
 import logging
 from typing import Any
 
+from PyViCare.PyViCareRadiatorActuator import RadiatorActuator
 from PyViCare.PyViCareUtils import (
     PyViCareCommandError,
     PyViCareInvalidDataError,
@@ -26,6 +27,7 @@ from homeassistant.components.climate import (
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
     ATTR_TEMPERATURE,
+    PRECISION_HALVES,
     PRECISION_TENTHS,
     PRECISION_WHOLE,
     UnitOfTemperature,
@@ -120,6 +122,7 @@ async def async_setup_entry(
         api = device.asAutoDetectDevice()
 
         circuits = await hass.async_add_executor_job(get_circuits, api)
+        # Devices with circuits will get one climate entity per circuit
         for circuit in circuits:
             suffix = ""
             if len(circuits) > 1:
@@ -132,6 +135,17 @@ async def async_setup_entry(
                 device,
             )
             entities.append(entity)
+
+        # RadiatorActuator have no circuits but also create a climate entity
+        if isinstance(api, RadiatorActuator):
+            entity = ViCareThermostat(
+                f"{name} RadiatorActuator{suffix}",
+                api,
+                device,
+            )
+            entities.append(entity)
+
+            
 
     platform = entity_platform.async_get_current_platform()
 
@@ -187,6 +201,7 @@ class ViCareClimate(ClimateEntity):
         self._current_temperature = None
         self._current_program = None
         self._current_action = None
+        self.update()
 
     @property
     def unique_id(self) -> str:
@@ -406,3 +421,111 @@ class ViCareClimate(ClimateEntity):
     def set_heating_curve(self, shift, slope):
         """Service function to set vicare heating curve directly."""
         self._circuit.setHeatingCurve(int(shift), round(float(slope), 1))
+
+
+class ViCareThermostat(ClimateEntity):
+    """Representation of the ViCare heating climate device."""
+
+    _attr_precision = PRECISION_TENTHS
+    _attr_supported_features = (
+        ClimateEntityFeature.TARGET_TEMPERATURE
+    )
+    _attr_temperature_unit = UnitOfTemperature.CELSIUS
+
+    def __init__(self, name, api, device_config):
+        """Initialize the climate device."""
+        self._name = name
+        self._state = None
+        self._api = api
+        self._device_config = device_config
+        self._attributes = {}
+        self._target_temperature = None
+        self._current_mode = None
+        self._current_temperature = None
+        self.update()
+
+    @property
+    def unique_id(self) -> str:
+        """Return unique ID for this device."""
+        return get_unique_id(self._api, self._device_config, 0)
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        """Return device info for this device."""
+        return DeviceInfo(
+            identifiers={
+                (
+                    DOMAIN,
+                    get_unique_device_id(self._device_config),
+                )
+            },
+            name=get_device_name(self._device_config),
+            manufacturer="Viessmann",
+            model=self._device_config.getModel(),
+            configuration_url="https://developer.viessmann.com/",
+        )
+
+    def update(self) -> None:
+        """Let HA know there has been an update from the ViCare API."""
+        try:
+            _room_temperature = None
+            with suppress(PyViCareNotSupportedFeatureError):
+                _room_temperature = self._api.getTemperature()
+            self._current_temperature = _room_temperature
+
+            with suppress(PyViCareNotSupportedFeatureError):
+                self._target_temperature = self._api.getTargetTemperature()
+
+            # Update the generic device attributes
+            self._attributes = {}
+            self._attributes["room_temperature"] = _room_temperature
+
+        except requests.exceptions.ConnectionError:
+            _LOGGER.error("Unable to retrieve data from ViCare server")
+        except PyViCareRateLimitError as limit_exception:
+            _LOGGER.error("Vicare API rate limit exceeded: %s", limit_exception)
+        except ValueError:
+            _LOGGER.error("Unable to decode data from ViCare server")
+        except PyViCareInvalidDataError as invalid_data_exception:
+            _LOGGER.error("Invalid data from Vicare server: %s", invalid_data_exception)
+
+    @property
+    def name(self):
+        """Return the name of the climate device."""
+        return self._name
+
+    @property
+    def current_temperature(self):
+        """Return the current temperature."""
+        return self._current_temperature
+
+    @property
+    def target_temperature(self):
+        """Return the temperature we try to reach."""
+        return self._target_temperature
+
+    @property
+    def hvac_mode(self) -> HVACMode | None:
+        """Return current hvac mode."""
+        return HVACMode.AUTO
+
+    @property
+    def hvac_modes(self) -> list[HVACMode]:
+        """Return the list of available hvac modes."""
+        return [HVACMode.AUTO]
+
+    @property
+    def target_temperature_step(self) -> float:
+        """Set target temperature step to wholes."""
+        return PRECISION_HALVES
+
+    def set_temperature(self, **kwargs: Any) -> None:
+        """Set new target temperatures."""
+        if (temp := kwargs.get(ATTR_TEMPERATURE)) is not None:
+            self._api.setTargetTemperature(temp)
+            self._target_temperature = temp
+
+    @property
+    def extra_state_attributes(self):
+        """Show Device Attributes."""
+        return self._attributes
