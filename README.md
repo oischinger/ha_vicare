@@ -12,16 +12,19 @@ Please check out the [Official Home Assistant ViCare integration](https://www.ho
 
 ## Why an unofficial integration?
 
-This repo is used for early development purposes and may contain some changes that are not (yet) contributed to Home Assistant Core.
+⚠️ As the only maintainer of this integration did not allow me to maintain it up to the [standards of a Home Assistant Core](https://developers.home-assistant.io/docs/integration_quality_scale_index). The interest in this integration grew rapidly and I could not keep up with it.
+
+Nevertheless I decided to still publish my work as a custom integration. Feel free to use it but please understand that I have very little time to work on it.
 
 ## Installation
 
 ### Install with HACS (recommended)
 
 1. Ensure that [HACS](https://community.home-assistant.io/t/custom-component-hacs) is installed.
-2. Search for and install the "ViCare" integration.
-3. Configure the `vicare` integration.
-4. Restart Home Assistant.
+2. In HACS [add a custom repositories](https://hacs.xyz/docs/faq/custom_repositories/) and use this URL: `https://github.com/oischinger/ha_vicare`
+3. Search for and install the "ViCare" integration.
+4. Configure the `vicare` integration.
+5. Restart Home Assistant.
 
 #### Install manually
 
