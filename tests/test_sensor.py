@@ -48,6 +48,31 @@ async def test_gas_boiler_sensors(
 @pytest.mark.parametrize(
     "entity_id",
     [
+        "sensor.vicare_energy_consumption_of_heating_current_day",
+        "sensor.vicare_energy_consumption_of_heating_current_week",
+        "sensor.vicare_energy_consumption_of_heating_current_month",
+        "sensor.vicare_energy_consumption_of_heating_current_year",
+        "sensor.vicare_energy_consumption_of_hot_water_heating_current_day",
+        "sensor.vicare_energy_consumption_of_hot_water_heating_current_week",
+        "sensor.vicare_energy_consumption_of_hot_water_heating_current_month",
+        "sensor.vicare_energy_consumption_of_hot_water_heating_current_year",
+    ],
+)
+async def test_heatpump_sensors(
+    hass: HomeAssistant,
+    mock_vicare_heatpump: MagicMock,
+    snapshot: SnapshotAssertion,
+    entity_id: str,
+) -> None:
+    """Test the ViCare Heatpump sensors."""
+    state = hass.states.get(entity_id)
+    assert state == snapshot
+
+
+@pytest.mark.freeze_time("2022-04-19 07:53:05")
+@pytest.mark.parametrize(
+    "entity_id",
+    [
         "sensor.vicare_room_temperature",
         "sensor.vicare_room_humidity",
     ],
