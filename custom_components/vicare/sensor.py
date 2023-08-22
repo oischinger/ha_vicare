@@ -766,7 +766,7 @@ class ViCareSensor(SensorEntity):
                         self._attr_native_unit_of_measurement = (
                             VICARE_UNIT_TO_UNIT_OF_MEASUREMENT.get(vicare_unit)
                         )
-        except requests.exceptions.ConnectionError:
+        except (requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout):
             _LOGGER.error("Unable to retrieve data from ViCare server")
         except ValueError:
             _LOGGER.error("Unable to decode data from ViCare server")

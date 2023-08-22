@@ -142,7 +142,7 @@ class ViCareSwitch(SwitchEntity):
             with suppress(PyViCareNotSupportedFeatureError):
                 _LOGGER.debug("Fetching DHW One Time Charging Status")
                 self._state = self.entity_description.value_getter(self._api)
-        except requests.exceptions.ConnectionError:
+        except (requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout):
             _LOGGER.error("Unable to retrieve data from ViCare server")
         except ValueError:
             _LOGGER.error("Unable to decode data from ViCare server")
@@ -161,7 +161,7 @@ class ViCareSwitch(SwitchEntity):
                 self._ignore_update_until = datetime.datetime.utcnow() + TIMEDELTA_UPDATE
                 self._state = True
 
-        except requests.exceptions.ConnectionError:
+        except (requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout):
             _LOGGER.error("Unable to retrieve data from ViCare server")
         except ValueError:
             _LOGGER.error("Unable to decode data from ViCare server")
@@ -179,7 +179,7 @@ class ViCareSwitch(SwitchEntity):
                 self._ignore_update_until = datetime.datetime.utcnow() + TIMEDELTA_UPDATE
                 self._state = False
 
-        except requests.exceptions.ConnectionError:
+        except (requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout):
             _LOGGER.error("Unable to retrieve data from ViCare server")
         except ValueError:
             _LOGGER.error("Unable to decode data from ViCare server")

@@ -132,7 +132,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         raise ConfigEntryNotReady from err
     except PyViCareInternalServerError as err:
         raise ConfigEntryNotReady from err
-    except requests.exceptions.ConnectionError as err:
+    except (requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout) as err:
         raise ConfigEntryNotReady from err
 
 def vicare_login(hass, entry_data, scan_interval = DEFAULT_SCAN_INTERVAL):
