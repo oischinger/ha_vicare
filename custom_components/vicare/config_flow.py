@@ -56,7 +56,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             except PyViCareInternalServerError as err:
                 errors["base"] = "server_error"
                 description_placeholders = {"error": str(err)}   
-            except requests.exceptions.ConnectionError as err:
+            except (requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout) as err:
                 errors["base"] = "cannot_connect"
                 description_placeholders = {"error": str(err)}  
             except PyViCareRateLimitError as err:

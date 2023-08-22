@@ -282,7 +282,7 @@ class ViCareClimate(ClimateEntity):
                         self._current_action or compressor.getActive()
                     )
 
-        except requests.exceptions.ConnectionError:
+        except (requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout):
             _LOGGER.error("Unable to retrieve data from ViCare server")
         except PyViCareRateLimitError as limit_exception:
             _LOGGER.error("Vicare API rate limit exceeded: %s", limit_exception)
@@ -480,7 +480,7 @@ class ViCareThermostat(ClimateEntity):
             self._attributes = {}
             self._attributes["room_temperature"] = _room_temperature
 
-        except requests.exceptions.ConnectionError:
+        except (requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout):
             _LOGGER.error("Unable to retrieve data from ViCare server")
         except PyViCareRateLimitError as limit_exception:
             _LOGGER.error("Vicare API rate limit exceeded: %s", limit_exception)

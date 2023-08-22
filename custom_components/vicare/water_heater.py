@@ -117,7 +117,7 @@ class ViCareWater(WaterHeaterEntity):
             with suppress(PyViCareNotSupportedFeatureError):
                 self._current_mode = self._circuit.getActiveMode()
 
-        except requests.exceptions.ConnectionError:
+        except (requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout):
             _LOGGER.error("Unable to retrieve data from ViCare server")
         except PyViCareRateLimitError as limit_exception:
             _LOGGER.error("Vicare API rate limit exceeded: %s", limit_exception)

@@ -125,7 +125,7 @@ class ViCareButton(ButtonEntity):
         try:
             with suppress(PyViCareNotSupportedFeatureError):
                 self.entity_description.value_setter(self._api)
-        except requests.exceptions.ConnectionError:
+        except (requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout):
             _LOGGER.error("Unable to retrieve data from ViCare server")
         except ValueError:
             _LOGGER.error("Unable to decode data from ViCare server")
