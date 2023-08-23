@@ -1,5 +1,10 @@
 # CHANGELOG
 
+# 1.0.0-beta.2
+
+- Handle read timeouts
+- Use precision and min max from API if available
+
 # 1.0.0-beta.1
 
 - Support for Zigbee thermostats as climate entities
