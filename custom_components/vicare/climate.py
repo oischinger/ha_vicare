@@ -29,7 +29,6 @@ from homeassistant.const import (
     ATTR_TEMPERATURE,
     PRECISION_HALVES,
     PRECISION_TENTHS,
-    PRECISION_WHOLE,
     UnitOfTemperature,
 )
 from homeassistant.core import HomeAssistant
@@ -201,6 +200,9 @@ class ViCareClimate(ClimateEntity):
         self._current_temperature = None
         self._current_program = None
         self._current_action = None
+        self._min_temp = None
+        self._max_temp = None
+        self._current_stepping = None
         self.update()
 
     @property
@@ -242,6 +244,21 @@ class ViCareClimate(ClimateEntity):
             else:
                 self._current_temperature = None
 
+            with suppress(PyViCareNotSupportedFeatureError):
+                self._min_temp = self._circuit.getActiveProgramMinTemperature()
+            if not self._min_temp:
+                self._min_temp = VICARE_TEMP_HEATING_MIN
+
+            with suppress(PyViCareNotSupportedFeatureError):
+                self._max_temp = self._circuit.getActiveProgramMaxTemperature()
+            if not self._max_temp:
+                self._max_temp = VICARE_TEMP_HEATING_MAX
+
+            with suppress(PyViCareNotSupportedFeatureError):
+                self._current_stepping = self._circuit.getActiveProgramStepping()
+            if not self._current_stepping:
+                self._current_stepping = PRECISION_HALVES
+            
             with suppress(PyViCareNotSupportedFeatureError):
                 self._current_program = self._circuit.getActiveProgram()
 
@@ -359,17 +376,17 @@ class ViCareClimate(ClimateEntity):
     @property
     def min_temp(self):
         """Return the minimum temperature."""
-        return VICARE_TEMP_HEATING_MIN
+        return self._min_temp
 
     @property
     def max_temp(self):
         """Return the maximum temperature."""
-        return VICARE_TEMP_HEATING_MAX
+        return self._max_temp
 
     @property
     def target_temperature_step(self) -> float:
-        """Set target temperature step to wholes."""
-        return PRECISION_WHOLE
+        """Get current stepping."""
+        return self._current_stepping
 
     def set_temperature(self, **kwargs: Any) -> None:
         """Set new target temperatures."""
@@ -516,7 +533,7 @@ class ViCareThermostat(ClimateEntity):
 
     @property
     def target_temperature_step(self) -> float:
-        """Set target temperature step to wholes."""
+        """Set target temperature step to halves."""
         return PRECISION_HALVES
 
     def set_temperature(self, **kwargs: Any) -> None:
