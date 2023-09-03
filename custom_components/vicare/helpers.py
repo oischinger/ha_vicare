@@ -1,5 +1,4 @@
 """Helpers for ViCare."""
-from PyViCare.PyViCareHeatingDevice import HeatingDevice
 from PyViCare.PyViCareUtils import PyViCareNotSupportedFeatureError
 
 
@@ -22,7 +21,7 @@ def get_device_name(device_config) -> str:
 
 def get_circuits(vicare_api):
     """Return the list of circuits."""
-    if not isinstance(vicare_api, HeatingDevice):
+    if not hasattr(vicare_api, 'circuits'):
         return []
     try:
         return vicare_api.circuits
@@ -31,7 +30,7 @@ def get_circuits(vicare_api):
 
 def get_burners(vicare_api):
     """Return the list of burners."""
-    if not isinstance(vicare_api, HeatingDevice):
+    if not hasattr(vicare_api, 'burners'):
         return []
     try:
         return vicare_api.burners
@@ -40,7 +39,7 @@ def get_burners(vicare_api):
 
 def get_compressors(vicare_api):
     """Return the list of compressors."""
-    if not isinstance(vicare_api, HeatingDevice):
+    if not hasattr(vicare_api, 'compressors'):
         return []
     try:
         return vicare_api.compressors

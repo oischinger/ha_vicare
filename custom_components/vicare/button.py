@@ -60,7 +60,7 @@ def _build_entity(name, vicare_api, device_config, description):
         )
         return None
     except PyViCareNotSupportedFeatureError:
-        _LOGGER.info("Feature not supported %s", name)
+        _LOGGER.debug("Feature not supported %s", name)
         return None
     except AttributeError:
         _LOGGER.debug("Attribute Error %s", name)

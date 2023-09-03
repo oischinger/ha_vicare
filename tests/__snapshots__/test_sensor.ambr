@@ -56,6 +56,30 @@
 # name: test_gas_boiler_sensors[sensor.vicare_power_consumption_this_week]
   <state sensor.vicare_power_consumption_this_week=0.829; state_class=total_increasing, unit_of_measurement=kWh, device_class=energy, friendly_name=ViCare Power consumption this week @ 2022-04-19T00:53:05-07:00>
 # ---
+# name: test_heatpump_sensors[sensor.vicare_energy_consumption_of_heating_current_day]
+  <state sensor.vicare_energy_consumption_of_heating_current_day=6.3; state_class=total_increasing, unit_of_measurement=kWh, device_class=energy, friendly_name=ViCare Energy consumption of heating current day @ 2022-04-19T00:53:05-07:00>
+# ---
+# name: test_heatpump_sensors[sensor.vicare_energy_consumption_of_heating_current_month]
+  <state sensor.vicare_energy_consumption_of_heating_current_month=152.4; state_class=total_increasing, unit_of_measurement=kWh, device_class=energy, friendly_name=ViCare Energy consumption of heating current month @ 2022-04-19T00:53:05-07:00>
+# ---
+# name: test_heatpump_sensors[sensor.vicare_energy_consumption_of_heating_current_week]
+  None
+# ---
+# name: test_heatpump_sensors[sensor.vicare_energy_consumption_of_heating_current_year]
+  <state sensor.vicare_energy_consumption_of_heating_current_year=831; state_class=total_increasing, unit_of_measurement=kWh, device_class=energy, friendly_name=ViCare Energy consumption of heating current year @ 2022-04-19T00:53:05-07:00>
+# ---
+# name: test_heatpump_sensors[sensor.vicare_energy_consumption_of_hot_water_heating_current_day]
+  <state sensor.vicare_energy_consumption_of_hot_water_heating_current_day=2.2; state_class=total_increasing, unit_of_measurement=kWh, device_class=energy, friendly_name=ViCare Energy consumption of hot water heating current day @ 2022-04-19T00:53:05-07:00>
+# ---
+# name: test_heatpump_sensors[sensor.vicare_energy_consumption_of_hot_water_heating_current_month]
+  <state sensor.vicare_energy_consumption_of_hot_water_heating_current_month=37.4; state_class=total_increasing, unit_of_measurement=kWh, device_class=energy, friendly_name=ViCare Energy consumption of hot water heating current month @ 2022-04-19T00:53:05-07:00>
+# ---
+# name: test_heatpump_sensors[sensor.vicare_energy_consumption_of_hot_water_heating_current_week]
+  None
+# ---
+# name: test_heatpump_sensors[sensor.vicare_energy_consumption_of_hot_water_heating_current_year]
+  <state sensor.vicare_energy_consumption_of_hot_water_heating_current_year=180.3; state_class=total_increasing, unit_of_measurement=kWh, device_class=energy, friendly_name=ViCare Energy consumption of hot water heating current year @ 2022-04-19T00:53:05-07:00>
+# ---
 # name: test_room_sensor_sensors[sensor.vicare_room_humidity]
   <state sensor.vicare_room_humidity=56; state_class=measurement, unit_of_measurement=%, icon=mdi:percent, friendly_name=ViCare Room Humidity @ 2022-04-19T00:53:05-07:00>
 # ---
