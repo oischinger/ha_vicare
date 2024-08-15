@@ -1,5 +1,7 @@
 # Unofficial Home Assistant custom component for Viessmann ViCare API
 
+# ⚠️This project is archived - Please use the official integration in Home Assistant
+
 [![GitHub contributors](https://img.shields.io/github/contributors/oischinger/ha_vicare)](https://github.com/thebino/vicare/graphs/contributors)
 ![Version](https://img.shields.io/github/v/release/oischinger/ha_vicare)
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
@@ -12,9 +14,9 @@ Please check out the [Official Home Assistant ViCare integration](https://www.ho
 
 ## Why an unofficial integration?
 
-⚠️ As the only maintainer of this integration did not allow me to maintain it up to the [standards of a Home Assistant Core](https://developers.home-assistant.io/docs/integration_quality_scale_index). The interest in this integration grew rapidly and I could not keep up with it.
+⚠️ I stopped maintaining the official integration due to lack of time. 
 
-Nevertheless I decided to still publish my work as a custom integration. Feel free to use it but please understand that I have very little time to work on it.
+Nevertheless I decided to publish my work as a custom integration since it supports a few things which the official integration doesn't (e.g. support for more than a single device) and it comes with end-to-end tests.
 
 Please refer to the [Changelog](CHANGELOG.md) to see what changed compared to the [Official Home Assistant ViCare integration](https://www.home-assistant.io/integrations/vicare).
 
