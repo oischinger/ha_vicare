@@ -58,3 +58,11 @@ Make sure to setup the development environment like as described [here](https://
 Create a patch from a given commit e.g. with `git format-patch HEAD~1` and apply it on the HA Core repo with this command:
 
 `git am -p2 --directory=homeassistant/components path_to_ha_vicare/custom_components/vicare/0001-some.patch`
+
+# Snapshot testing
+
+Snapshot testing (also known as approval tests) are tests that assert values against a stored reference value (the snapshot); ensuring the output of code remains the same over time.
+
+This integration makes heavy use of snapshot testing. API dumps of actual heating devices are used as [fixtures](https://github.com/oischinger/ha_vicare/tree/master/tests/components/vicare/fixtures).
+
+When adding new tests for sensors you will have to update the snapshots via `pytest --snapshot-update`
